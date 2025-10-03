@@ -63,5 +63,3 @@ For licensing inquiries: **mpark@dtu.dk**
 
 **Mark Parking**  
 Email: mpark@dtu.dk  
-
-*This repository demonstrates professional software development capabilities.*
