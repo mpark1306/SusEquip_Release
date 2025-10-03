@@ -1,0 +1,107 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UsingNetFramework Condition="'$(MSBuildRuntimeType)' == 'Full'">true</UsingNetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Areas\**" />
+    <Compile Remove="Migrations\**" />
+    <Compile Remove="Pages\Identity Pages\**" />
+    <Compile Remove="Services\**" />
+    <Compile Remove="Scripts\**" />
+    <Compile Remove="SusEquip.Tests\**" />
+    <Content Remove="Areas\**" />
+    <Content Remove="Migrations\**" />
+    <Content Remove="Pages\Identity Pages\**" />
+    <Content Remove="Services\**" />
+    <Content Remove="Scripts\**" />
+    <Content Remove="SusEquip.Tests\**" />
+    <EmbeddedResource Remove="Areas\**" />
+    <EmbeddedResource Remove="Migrations\**" />
+    <EmbeddedResource Remove="Pages\Identity Pages\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <EmbeddedResource Remove="Scripts\**" />
+    <EmbeddedResource Remove="SusEquip.Tests\**" />
+    <None Remove="Areas\**" />
+    <None Remove="Migrations\**" />
+    <None Remove="Pages\Identity Pages\**" />
+    <None Remove="Services\**" />
+    <None Remove="Scripts\**" />
+    <None Remove="SusEquip.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\DataContext.cs" />
+    <Compile Remove="Data\Equipment.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Components\RedirectToLogin.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <COMReference Include="bpac" Condition="'$(UsingNetFramework)' == 'true'">
+      <WrapperTool>tlbimp</WrapperTool>
+      <VersionMinor>3</VersionMinor>
+      <VersionMajor>1</VersionMajor>
+      <Guid>90359d74-b7d9-467f-b938-3883f4cab582</Guid>
+      <Lcid>0</Lcid>
+      <Isolated>false</Isolated>
+      <EmbedInteropTypes>false</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\Images\Bright_Green_CMYK.png" />
+    <None Include="wwwroot\Images\Green_RGB.jpg" />
+    <None Include="wwwroot\Images\Green_RGB.png" />
+    <None Include="wwwroot\Images\random-3440x1440-v0-es317d9mwylb1.webp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.4.1" />
+    <PackageReference Include="MailKit" Version="4.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.11.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.10" />
+    <PackageReference Include="Microsoft.PowerShell.Commands.Diagnostics" Version="7.4.5" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.5" />
+    <PackageReference Include="MudBlazor" Version="8.11.0" />
+    <PackageReference Include="MudBlazor.Extensions" Version="8.2.1" />
+    <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="8.0.1" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
+    <PackageReference Include="System.Management.Automation" Version="7.4.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Components\" />
+    <Folder Include="Exports\" />
+  </ItemGroup>
+
+  <Target Name="ResolveComReferences" Condition="'$(UsingNetFramework)' == 'true'">
+    <ResolveComReference TypeLibNames="@(COMReference)" TypeLibFiles="@(COMFileReference)" ResolvedAssemblyReferences="@(ReferencePath)" WrapperOutputDirectory="$(InteropOutputPath)" IncludeVersionInInteropName="$(IncludeVersionInInteropName)" KeyContainer="$(KeyContainerName)" KeyFile="$(KeyOriginatorFile)" DelaySign="$(DelaySign)" StateFile="@(_ResolveComReferenceCache)" TargetFrameworkVersion="$(TargetFrameworkVersion)" TargetProcessorArchitecture="$(ProcessorArchitecture)" NoClassMembers="$(ComReferenceNoClassMembers)" Silent="$(ResolveComReferenceSilent)" EnvironmentVariables="$(ResolveComReferenceEnvironment)" SdkToolsPath="$(ResolveComReferenceToolPath)" ExecuteAsTool="$(ComReferenceExecuteAsTool)" MSBuildArchitecture="$(ResolveComReferenceMSBuildArchitecture)" ContinueOnError="$(ContinueOnError)">
+      <Output TaskParameter="ResolvedFiles" ItemName="ReferencePath" />
+      <Output TaskParameter="ResolvedFiles" ItemName="ComReferenceWrappers" />
+      <Output TaskParameter="ResolvedFiles" ItemName="FileWrites" />
+      <Output TaskParameter="ResolvedModules" ItemName="ResolvedIsolatedComModules" />
+    </ResolveComReference>
+  </Target>
+
+</Project>

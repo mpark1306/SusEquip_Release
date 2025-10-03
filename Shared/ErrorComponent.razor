@@ -1,0 +1,10 @@
+﻿@code {
+    [Parameter] public string ErrorMessage { get; set; } = string.Empty;
+    [Parameter] public string StackTrace { get; set; } = string.Empty;
+}
+
+<MudPaper Class="pa-4 ma-2 align-center justify-center" Outlined="true">
+    <MudText Typo="Typo.h5">An error occurred</MudText>
+    <MudText Typo="Typo.body1">@ErrorMessage</MudText>
+    <MudText Typo="Typo.body2">@StackTrace</MudText>
+</MudPaper>

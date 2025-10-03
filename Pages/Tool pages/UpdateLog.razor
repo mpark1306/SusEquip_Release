@@ -1,0 +1,392 @@
+@page "/updatelog"
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <!-- Header Section -->
+    <MudPaper Class="pa-6 mb-4" Elevation="3">
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="4">
+            <MudIcon Icon="@Icons.Material.Filled.Update" Color="Color.Primary" Size="Size.Large" />
+            <div>
+                <MudText Typo="Typo.h3" Class="mb-2">SusEquip Update History</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Complete timeline of application updates, improvements, and feature additions to the SusEquip equipment management system.
+                </MudText>
+            </div>
+        </MudStack>
+    </MudPaper>
+
+<MudTimeline TimelineAlign="_timelineAlign">
+    <!-- Latest Updates - Current Version -->
+    <MudTimelineItem Color="Color.Success" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Success" Typo="Typo.h6">October 2, 2025</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Success" Typo="Typo.h6" GutterBottom="true">Update 2.2.0 - Major Architecture,Dashboard & UI Enhancement</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Dashboard Statistics Engine Overhaul:</strong><br />
+                    - Completely redesigned dashboard statistics with enhanced Service_Ends date validation<br />
+                    - Implemented intelligent filtering for "Active" machines using both status ('Hos Bruger') and service date criteria<br />
+                    - Fixed critical issue with New/Used equipment counts showing incorrect values<br />
+                    - Added optimized SQL queries with Common Table Expressions (CTE) for latest equipment records<br />
+                    - Enhanced accuracy of equipment lifecycle tracking and service period monitoring<br /><br />
+
+                    <strong>Visual Experience & Engagement:</strong><br />
+                    - Introduced dynamic rolling announcement bar with animated gradient backgrounds<br />
+                    - Implemented smooth end-to-end text scrolling animation ("Hvem har Equip'en åben??")<br />
+                    - Added responsive design support for announcement bar across all device sizes<br />
+                    - Enhanced visual appeal with colorful gradient transitions and text shadow effects<br />
+                    - Fixed animation timing for proper viewport-width coverage<br /><br />
+
+                    <strong>Technical Architecture Improvements:</strong><br />
+                    - Resolved status value mismatches between dashboard queries and individual methods<br />
+                    - Updated SQL queries to use correct full status names ('Modtaget (Ny)', 'På Lager (Brugt)')<br />
+                    - Enhanced CSS animation system with proper viewport calculations<br />
+                    - Improved code consistency between GetNewMachines(), GetUsedMachines(), and dashboard statistics<br /><br />
+
+                    <strong>Complete Code Architecture Overhaul:</strong><br />
+                    - Implemented Phase 5.5 advanced OOP patterns with Repository and Command design patterns<br />
+                    - Transitioned from legacy CRUD operations to modern interface-based architecture<br />
+                    - Added comprehensive IEquipmentRepository and IUnitOfWork patterns for better separation of concerns<br />
+                    - Implemented CQRS-style command handlers in Data/Commands/ with CommandExecutor pattern<br />
+                    - Enhanced service layer with decorator patterns for caching, logging, and performance monitoring<br />
+                    - Integrated Strategy pattern for validation with Data/Services/Validation/ architecture<br />
+                    - Established BaseEquipmentData model hierarchy for polymorphic equipment handling<br />
+                    - Added comprehensive exception handling with custom DatabaseOperationException types<br />
+                    - Implemented dependency injection container setup supporting both legacy and modern patterns<br />
+                    - Enhanced data access layer with parameterized SQL queries and proper connection management<br /><br />
+
+                    <strong>Quality Assurance & Testing:</strong><br />
+                    - Achieved 100% unit test pass rate (59/59 tests passing)<br />
+                    - Comprehensive test coverage validation across all components<br />
+                    - Enhanced integration testing framework stability<br />
+                    - Verified Phase 5.5 architectural patterns and repository implementations<br /><br />
+
+                    <strong>User Interface Polish:</strong><br />
+                    - Added fixed-position announcement bar with proper z-index layering<br />
+                    - Implemented automatic body padding adjustment for announcement bar visibility<br />
+                    - Enhanced visual hierarchy with improved color schemes and animations<br />
+                    - Optimized responsive behavior for mobile, tablet, and desktop viewing<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">July 24, 2025</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 2.1.2 - Previous Release</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Enhanced Data Validation Dialog System:</strong><br />
+                    - Introduced comprehensive DeviceDetailsDialog for DataValidation.razor providing full device information display<br />
+                    - Implemented action buttons integration (History, Add Entry, Documentation, Add to DTUPC) directly within validation workflow<br />
+                    - Enhanced user experience with detailed device overview accessible during validation processes<br />
+                    - Streamlined validation workflow with immediate access to device management functions<br /><br />
+
+                    <strong>User Experience Improvements:</strong><br />
+                    - Added automatic Creator initials filling in DataCorrectionDialog and IgnoreIssueDialog using CookieService<br />
+                    - Implemented consistent user preference persistence across all dialog components<br />
+                    - Enhanced form auto-population reducing manual data entry requirements<br />
+                    - Improved workflow efficiency with smart defaults and session management<br /><br />
+
+                    <strong>Dialog System Enhancement:</strong><br />
+                    - Created modern, responsive DeviceDetailsDialog with comprehensive device information layout<br />
+                    - Integrated service status monitoring with visual indicators and expiration alerts<br />
+                    - Added support for both regular and OLD machine data handling<br />
+                    - Implemented advanced dialog parameter passing and state management<br /><br />
+
+                    <strong>Technical Architecture:</strong><br />
+                    - Enhanced CookieService integration across dialog components for consistent user experience<br />
+                    - Improved dialog service utilization with proper async/await patterns<br />
+                    - Maintained backward compatibility while adding new comprehensive viewing capabilities<br />
+                    - Optimized component rendering and data binding for better performance<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">July 15, 2025</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 2.1.1</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Production-Ready Optimization:</strong><br />
+                    - Removed all debugging statements and Console.WriteLine calls from production code<br />
+                    - Enhanced error handling with proper exception management<br />
+                    - Improved application stability and performance<br />
+                    - Clean codebase ready for production deployment<br /><br />
+
+                    <strong>Data Quality Improvements:</strong><br />
+                    - Implemented advanced data validation warnings for AddNew and EditDialog forms<br />
+                    - Added override capability for validation warnings with user confirmation<br />
+                    - Enhanced multi-line formatting for validation issue summaries<br />
+                    - Improved data integrity checks and user feedback<br /><br />
+
+                    <strong>User Interface Enhancements:</strong><br />
+                    - Enhanced validation warning dialogs with clear, formatted messages<br />
+                    - Improved user experience with better confirmation workflows<br />
+                    - Streamlined error messaging and user feedback systems<br />
+                    - Better visual formatting of validation issues and warnings<br /><br />
+
+                    <strong>System Stability:</strong><br />
+                    - Resolved all compilation errors and warnings<br />
+                    - Improved exception handling throughout the application<br />
+                    - Enhanced logging and error tracking capabilities<br />
+                    - Optimized database operations and connection management<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">July 1, 2025</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 2.1.0</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Major Architecture & Performance Improvements:</strong><br />
+                    - Implemented Dashboard Cache Service for real-time statistics with intelligent caching<br />
+                    - Added manual refresh capability with last-updated timestamps<br />
+                    - Enhanced error handling and loading states throughout the application<br /><br />
+
+                    <strong>Advanced Search & Filtering:</strong><br />
+                    - Completely redesigned advanced search panels for all equipment tabs<br />
+                    - Added comprehensive filtering by date ranges, departments, and technical specifications<br />
+                    - Improved search performance with optimized database queries<br /><br />
+
+                    <strong>User Experience Enhancements:</strong><br />
+                    - Modern, responsive UI with improved navigation<br />
+                    - Enhanced User Settings page with theme selection and dark mode<br />
+                    - Real-time theme switching without application restart<br />
+                    - Improved form validation and error messaging<br /><br />
+
+                    <strong>Equipment Management:</strong><br />
+                    - Enhanced multi-tab interface for equipment status management<br />
+                    - Improved child row details with expanded technical information<br />
+                    - Better integration with DTUPC systems<br />
+                    - Enhanced audit trails and history tracking<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">December 15, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 2.0.5</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Documentation & Information Updates:</strong><br />
+                    - Completely redesigned Info page with comprehensive documentation<br />
+                    - Added detailed component and service documentation<br />
+                    - Improved user guides and feature explanations<br /><br />
+
+                    <strong>System Stability:</strong><br />
+                    - Fixed various UI warnings and improved component compatibility<br />
+                    - Enhanced error boundaries and exception handling<br />
+                    - Improved database connection stability<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">November 14, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 1.04 - Equipment Lifecycle Management</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Dashboard Enhancements:</strong><br />
+                    - Added expiration date monitoring for equipment within 2 months of service end<br />
+                    - Implemented comprehensive equipment status tracking and alerts<br />
+                    - Enhanced homepage statistics with real-time data updates<br /><br/>
+                 
+                    <strong>Device Library Improvements:</strong><br/>
+                    - Added dedicated Quarantined devices view for improved equipment management<br />
+                    - Implemented expandable row functionality for detailed equipment specifications<br />
+                    - Enhanced filtering and search capabilities across all equipment categories<br /><br />
+
+                    <strong>User Experience:</strong><br />
+                    - Improved dialog interactions with better confirmation workflows<br />
+                    - Enhanced "Understood" button functionality for seamless window management<br />
+                    - Streamlined navigation and user feedback systems<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">September 26, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 1.04 - Smart Registration Features</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Register New PC Enhancements:</strong><br />
+                    - Implemented auto-closing calendar functionality for Service Start date selection<br />
+                    - Added intelligent Service End date auto-calculation with manual override capability<br />
+                    - Enhanced multi-device registration with field memory retention<br />
+                    - Improved data persistence for Creator, Status, Model Name, and Department fields<br /><br />
+
+                    <strong>Data Integrity Improvements:</strong><br />
+                    - Fixed Product_No and Model_Name_And_No field mismatch issues<br />
+                    - Enhanced validation and error handling for equipment registration<br />
+                    - Improved database query optimization in Equipment.cs GetMachines() method<br /><br />
+
+                    <strong>System Performance:</strong><br />
+                    - Optimized SQL queries for better data retrieval performance<br />
+                    - Enhanced error handling and user feedback mechanisms<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Info" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Info" Typo="Typo.h6">July 11, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="true">Update 1.03.1 - Performance Optimization</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Database Connection Improvements:</strong><br />
+                    - Extended connection timeout to 1 hour for enhanced stability<br />
+                    - Improved handling of long-running database operations<br />
+                    - Enhanced system reliability for large dataset processing<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Warning" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Warning" Typo="Typo.h6">July 4, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Warning" Typo="Typo.h6" GutterBottom="true">Update 1.03 - Advanced Filtering & Data Management</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Enhanced Device Library:</strong><br/>
+                    - Redesigned library interface with device-specific categorization<br />
+                    - Added comprehensive "All Entries" library view for complete equipment oversight<br />
+                    - Implemented advanced multi-criteria filtering system<br />
+                    - Enhanced search capabilities with real-time filtering<br /><br />
+                    
+                    <strong>Data Protection & Backup:</strong><br />
+                    - Implemented automatic Excel backup creation before each addition and modification<br />
+                    - Enhanced data integrity protection with versioned backups<br />
+                    - Improved audit trail capabilities for compliance requirements<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">July 1, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 1.02.1 - Navigation Enhancement</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>User Interface Improvements:</strong><br />
+                    - Enhanced menu text with clickable functionality for improved navigation<br />
+                    - Implemented intuitive return-to-home functionality<br />
+                    - Improved user experience with streamlined interface interactions<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">June 28, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 1.02 - History Management & Documentation</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Device Library Enhancements:</strong><br />
+                    - Restored Delete functionality in equipment history for administrative control<br />
+                    - Enhanced history management capabilities<br /><br />
+                      
+                    <strong>Documentation & Tracking:</strong><br />
+                    - Introduced comprehensive "Update Log" system for change tracking<br />
+                    - Improved transparency in application development and feature additions<br />
+                    - Enhanced user awareness of system capabilities and improvements<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Primary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Primary" Typo="Typo.h6">June 25, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Primary" Typo="Typo.h6" GutterBottom="true">Update 1.01 - System Refinement</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Device Library Improvements:</strong><br />
+                    - Enhanced filtering functionality with improved performance and accuracy<br />
+                    - Temporarily removed delete functionality from history for data protection<br />
+                    - Updated terminology: "Machine" changed to "Device" for better clarity<br />
+                    - Streamlined interface by removing unused "Profile" section<br /><br />
+
+                    <strong>Navigation & Links:</strong><br />
+                    - Updated and corrected Where-To-Go page links and functionality<br />
+                    - Improved external site integration and accessibility<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+
+    <MudTimelineItem Color="Color.Secondary" Elevation="25">
+        <ItemOpposite>
+            <MudText Color="Color.Secondary" Typo="Typo.h6" GutterBottom="true">June 13, 2024</MudText>
+        </ItemOpposite>
+        <ItemContent>
+            <MudPaper Elevation="0" Class="mt-n1">
+                <MudText Color="Color.Secondary" Typo="Typo.h6" GutterBottom="true">SusEquip 2.0 - Initial Release</MudText>
+                <MudText Typo="Typo.body2">
+                    <strong>Major Platform Launch:</strong><br />
+                    - Complete redesign of equipment management system<br />
+                    - Modern web-based interface using Blazor and MudBlazor<br />
+                    - Comprehensive equipment tracking and lifecycle management<br />
+                    - Multi-user support with role-based access<br />
+                    - Real-time database integration with Entity Framework Core<br />
+                    - Advanced search and filtering capabilities<br />
+                    - Equipment history tracking and audit trails<br />
+                    - Print and export functionality for compliance reporting<br /><br />
+
+                    <strong>Foundation Features:</strong><br />
+                    - Device registration and management system<br />
+                    - Machine model catalog and specifications<br />
+                    - Equipment status tracking (Active, Quarantined, Used, New)<br />
+                    - Service date management and expiration monitoring<br />
+                    - Integration capabilities with external systems<br />
+                    - Comprehensive reporting and analytics<br /><br />
+                </MudText>
+            </MudPaper>
+        </ItemContent>
+    </MudTimelineItem>
+</MudTimeline>
+
+</MudContainer>
+
+@code {
+    private TimelineAlign _timelineAlign { get; set; } = TimelineAlign.Start;
+}

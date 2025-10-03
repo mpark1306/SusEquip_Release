@@ -1,0 +1,104 @@
+﻿@using System.Timers
+@using MudBlazor
+@inject IDialogService Dialog
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border-radius: 12px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.FileDownload" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Align="Align.Center">
+                        Exporting Data
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        Compiling to Excel file...
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Progress Card -->
+            <MudCard Elevation="4" Style="border-radius: 12px;">
+                <MudCardContent Class="pa-6">
+                    <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                        <MudProgressCircular Color="Color.Primary" 
+                                           Value="@ProgressValue" 
+                                           Size="Size.Large" 
+                                           StrokeWidth="6">
+                            <MudText Typo="Typo.body1">@((int)ProgressValue)%</MudText>
+                        </MudProgressCircular>
+
+                        <MudProgressLinear Value="@ProgressValue" 
+                                         Color="Color.Primary" 
+                                         Class="my-4" 
+                                         Style="width: 100%; height: 8px; border-radius: 4px;" />
+
+                        @if (ShowButton)
+                        {
+                            <MudAlert Severity="Severity.Success" Class="my-3" Style="width: 100%;">
+                                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                    <MudText Typo="Typo.h6">Export Complete!</MudText>
+                                    <MudText Typo="Typo.body2" Align="Align.Center">
+                                        File can be found at: <br />
+                                        <strong>\\Sus-pequip01\eq_db\Equip_Expo</strong>
+                                    </MudText>
+                                    <MudButton Color="Color.Success" 
+                                             Variant="Variant.Filled" 
+                                             OnClick="Close"
+                                             StartIcon="@Icons.Material.Filled.Done"
+                                             Class="mt-3">
+                                        Success!
+                                    </MudButton>
+                                </MudStack>
+                            </MudAlert>
+                        }
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    private double ProgressValue { get; set; } = 0;
+    private Timer Timer { get; set; } = default!;
+    private bool ShowButton { get; set; } = false;
+
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        // Ensure that the component is used as a dialog.
+        if (MudDialog == null)
+        {
+            throw new InvalidOperationException("MudDialog instance is not set.");
+        }
+
+        Timer = new Timer(1000); // 1 second interval
+        Timer.Elapsed += OnTimerElapsed;
+        Timer.Start();
+    }
+
+    private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        ProgressValue += 10;
+
+        if (ProgressValue >= 100)
+        {
+            Timer.Stop();
+            Timer.Dispose();
+            ShowButton = true;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    void Close() => MudDialog.Close(DialogResult.Ok(true));
+
+    public void Dispose()
+    {
+        Timer?.Dispose();
+    }
+}

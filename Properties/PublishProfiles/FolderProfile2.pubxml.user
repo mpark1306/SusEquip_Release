@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>\\SUS-PEQUIP01\inetpub\wwwroot\SusEquip</_PublishTargetUrl>
+    <History>True|2025-04-02T10:11:32.8913344Z||;True|2025-04-02T11:57:11.9001726+02:00||;True|2025-04-02T11:54:54.1613426+02:00||;True|2025-04-02T11:50:08.2336924+02:00||;True|2025-04-02T11:48:45.9927274+02:00||;False|2025-04-02T11:44:59.1646925+02:00||;True|2025-04-02T11:42:08.3200109+02:00||;True|2025-04-02T11:39:05.5497481+02:00||;True|2025-04-02T11:28:18.4650057+02:00||;False|2025-04-02T11:25:52.7125524+02:00||;True|2025-04-02T11:20:08.8668807+02:00||;True|2025-04-02T10:57:07.5420674+02:00||;True|2025-04-02T10:53:51.1574981+02:00||;True|2025-04-02T10:49:29.6001662+02:00||;True|2025-04-01T14:55:18.2873430+02:00||;True|2025-04-01T14:42:42.1742941+02:00||;True|2025-04-01T14:28:24.6075395+02:00||;True|2025-04-01T14:23:06.4137058+02:00||;True|2025-04-01T14:13:05.4433540+02:00||;False|2025-04-01T14:11:17.8830322+02:00||;True|2025-04-01T14:00:28.2382606+02:00||;False|2025-04-01T13:58:47.9132989+02:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="DefaultConnection">
+      <Value>Data Source=sus-pequip01\EQUIPDB%3bInitial Catalog=Equip2%3bUser Id=sa%3bPassword=NoCakeForMe1306%3bConnect Timeout=120%3bEncrypt=True%3b TrustServerCertificate=True%3b</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+</Project>

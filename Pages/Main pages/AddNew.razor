@@ -1,0 +1,741 @@
+@page "/AddNew"
+@using MudBlazor
+@using MudBlazor.Services
+@using SusEquip.Data.Models
+@using MudBlazor.Interfaces
+@using SusEquip.Data.Utilities
+@using SusEquip.Data.Interfaces.Services
+@using System.Text.Json
+@inject SusEquip.Data.Services.EquipmentService _Equipment
+@inject SusEquip.Data.Services.OLDEquipmentService OLDEquipmentService
+@inject IDataValidationService _ValidationService
+@inject SusEquip.Data.DatabaseHelper DatabaseHelper
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<!-- Header Section -->
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudPaper Elevation="3" Class="pa-8 mb-6">
+        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Computer" Size="Size.Large" />
+            <MudText Typo="Typo.h3">
+                Add New Equipment
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center">
+                Register a new PC, laptop, or other equipment to the system
+            </MudText>
+        </MudStack>
+    </MudPaper>
+
+    <MudGrid Spacing="4" Justify="Justify.Center">
+        <!-- Equipment Details Card -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" />
+                            <MudText Typo="Typo.h6">Equipment Information</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-6">
+                    <MudStack Spacing="4">
+                        <!-- Device Type Toggles -->
+                        <MudPaper Elevation="2" Class="pa-4">
+                            <MudStack Spacing="2">
+                                <MudCheckBox @bind-Value="IsMac" 
+                                           Color="Color.Primary" 
+                                           Size="Size.Large">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Computer" Size="Size.Small" />
+                                        <MudText>Apple/Mac Device</MudText>
+                                    </MudStack>
+                                </MudCheckBox>
+                                
+                                <MudCheckBox @bind-Value="IsOLDMachine" 
+                                           Color="Color.Warning" 
+                                           Size="Size.Large">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" />
+                                        <MudText>OLD Machine (Currently NOT in the System)</MudText>
+                                    </MudStack>
+                                </MudCheckBox>
+                            </MudStack>
+                        </MudPaper>
+
+                        <!-- Basic Information -->
+                        <MudStack Spacing="3">
+                            <MudTextField 
+                                Label="Creator Initials" 
+                                @bind-Value="_equipmentData.Creator_Initials" 
+                                Variant="Variant.Outlined" 
+                                @oninput="SaveToSession" 
+                                Required="true"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                            <!-- Machine Type - now editable with automatic determination -->
+                            <MudSelect T="string"
+                                Label="Machine Type" 
+                                @bind-Value="_equipmentData.MachineType"
+                                Variant="Variant.Outlined"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Computer"
+                                HelperText="@GetMachineTypeHelperText()"
+                                HelperTextColor="@GetMachineTypeHelperColor()">
+                                <MudSelectItem Value="@("Employee Laptop")" />
+                                <MudSelectItem Value="@("Employee Desktop")" />
+                                <MudSelectItem Value="@("Employee Linux")" />
+                                <MudSelectItem Value="@("Employee Mac(Apple)")" />
+                                <MudSelectItem Value="@("Student")" />
+                                <MudSelectItem Value="@("LAB")" />
+                                <MudSelectItem Value="@("General")" />
+                                <MudSelectItem Value="@("Waiting for PC Name")" />
+                                <MudSelectItem Value="@("Error")" />
+                            </MudSelect>
+
+                            <MudTextField 
+                                Label="App Owner" 
+                                @bind-Value="_equipmentData.App_Owner" 
+                                Variant="Variant.Outlined" 
+                                @oninput="SaveToSession"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.AccountCircle" />
+
+                            <MudSelect T="string" 
+                                     Label="Status" 
+                                     Value="@_equipmentData.Status"
+                                     ValueChanged="@((string value) => OnStatusChanged(value))" 
+                                     Variant="Variant.Outlined" 
+                                     Required="true"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.CheckCircle">
+                                <MudSelectItem Value="@("Modtaget (Ny)")" />
+                                <MudSelectItem Value="@("Hos Bruger")" />
+                                <MudSelectItem Value="@("Kasseret")" />
+                                <MudSelectItem Value="@("Stjålet")" />
+                                <MudSelectItem Value="@("På Lager (Brugt)")" />
+                                <MudSelectItem Value="@("I bur/kasse")" />
+                                <MudSelectItem Value="@("Karantæne")" />
+                                <MudSelectItem Value="@("Afhentet af Refurb")" />
+                            </MudSelect>
+                        </MudStack>
+
+                        <!-- Technical Details -->
+                        <MudDivider />
+                        <MudText Typo="Typo.h6">
+                            <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+                            Technical Specifications
+                        </MudText>
+
+                        <MudStack Spacing="3">
+                            <MudTextField 
+                                Label="Serial Number" 
+                                @bind-Value="_equipmentData.Serial_No" 
+                                Variant="Variant.Outlined" 
+                                @oninput="SaveToSession" 
+                                Required="true"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Tag" />
+
+                            <MudTextField 
+                                Label="MAC Address 1" 
+                                @bind-Value="_equipmentData.Mac_Address1" 
+                                Variant="Variant.Outlined" 
+                                Disabled="IsMac" 
+                                @oninput="SaveToSession" 
+                                Required="!IsMac"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.NetworkWifi" />
+
+                            <MudTextField 
+                                Label="MAC Address 2" 
+                                @bind-Value="_equipmentData.Mac_Address2" 
+                                Variant="Variant.Outlined" 
+                                Disabled="IsMac" 
+                                @oninput="SaveToSession"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.NetworkWifi" />
+
+                            <MudTextField 
+                                Label="UUID" 
+                                @bind-Value="_equipmentData.UUID" 
+                                Variant="Variant.Outlined" 
+                                Disabled="IsMac" 
+                                @oninput="SaveToSession"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Fingerprint" />
+
+                            <MudTextField 
+                                Label="Product Number" 
+                                @bind-Value="_equipmentData.Product_No" 
+                                Variant="Variant.Outlined" 
+                                @oninput="SaveToSession" 
+                                Required="true"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.QrCode" />
+
+                            <MudTextField 
+                                Label="Model Name and Number" 
+                                @bind-Value="_equipmentData.Model_Name_and_No" 
+                                Variant="Variant.Outlined" 
+                                @oninput="SaveToSession"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.DeviceHub" />
+
+                            <MudSelect T="string" 
+                                     Label="Department" 
+                                     Variant="Variant.Outlined" 
+                                     @bind-Value="_equipmentData.Department" 
+                                     @onchange="SaveToSession"
+                                     Required="true"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Business">
+                                <MudSelectItem Value="@("N/A")" />
+                                <MudSelectItem Value="@("SUS")" />
+                                <MudSelectItem Value="@("CME")" />
+                                <MudSelectItem Value="@("ENV")" />
+                                <MudSelectItem Value="@("SPACE")" />
+                                <MudSelectItem Value="@("BYG")" />
+                            </MudSelect>
+
+                            <MudTextField 
+                                Label="Computer Name" 
+                                Value="@_equipmentData.PC_Name"
+                                ValueChanged="@((string value) => OnPcNameChanged(value))"
+                                Variant="Variant.Outlined" 
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Computer" />
+
+                            <MudTextField 
+                                Label="Notes" 
+                                @bind-Value="_equipmentData.Note" 
+                                Variant="Variant.Outlined" 
+                                @oninput="SaveToSession"
+                                Lines="3"
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Notes" />
+                        </MudStack>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <!-- Service & Configuration Card -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule" />
+                            <MudText Typo="Typo.h6">Service Period & Actions</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-6">
+                    <MudStack Spacing="4">
+                        <!-- Service Dates Section -->
+                        <MudPaper Elevation="2" Class="pa-4">
+                            <MudText Typo="Typo.h6">
+                                <MudIcon Icon="@Icons.Material.Filled.DateRange" Class="mr-2" />
+                                Service Period
+                            </MudText>
+                            
+                            <!-- Service Start Date -->
+                            <MudStack Spacing="3">
+                                <MudPaper Class="pa-3" Elevation="1">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Justify="Justify.SpaceBetween">
+                                        <MudStack>
+                                            <MudText Typo="Typo.body2">Service Start Date</MudText>
+                                            <MudText Typo="Typo.h6">
+                                                @(servicestart?.ToString("yyyy-MM-dd") ?? "Not selected")
+                                            </MudText>
+                                        </MudStack>
+                                        <MudButton Variant="Variant.Filled" 
+                                                 Color="Color.Primary" 
+                                                 OnClick="@(() => ToggleOpen(ref _isOpen2))">
+                                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-1" />
+                                            Select
+                                        </MudButton>
+                                    </MudStack>
+                                </MudPaper>
+
+                                <!-- Service End Date -->
+                                <MudPaper Class="pa-3" Elevation="1">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Justify="Justify.SpaceBetween">
+                                        <MudStack>
+                                            <MudText Typo="Typo.body2">Service End Date</MudText>
+                                            <MudText Typo="Typo.h6">
+                                                @(serviceend?.ToString("yyyy-MM-dd") ?? "Not selected")
+                                            </MudText>
+                                        </MudStack>
+                                        <MudButton Variant="Variant.Filled" 
+                                                 Color="Color.Primary" 
+                                                 OnClick="@(() => ToggleOpen(ref _isOpen3))">
+                                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-1" />
+                                            Select
+                                        </MudButton>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudStack>
+
+                            <!-- Date Pickers -->
+                            <MudPopover Open="@_isOpen2" Class="px-4 pt-4" AnchorOrigin="Origin.CenterLeft">
+                                <MudDatePicker Label="Service Start"
+                                Date="@servicestart"
+                                DateFormat="dd.MM.yyyy"
+                                TimeEditMode="TimeEditMode.Normal"
+                                PickerVariant="PickerVariant.Static"
+                                DateChanged="OnServiceStartDateChanged" />
+                            </MudPopover>
+
+                            <MudPopover Open="@_isOpen3" Class="px-4 pt-4" AnchorOrigin="Origin.CenterLeft">
+                                <MudDatePicker Label="Service End"
+                                @bind-Date="serviceend"
+                                DateFormat="dd.MM.yyyy"
+                                TimeEditMode="TimeEditMode.Normal"
+                                PickerVariant="PickerVariant.Static" />
+                                <MudButton OnClick="@(() => ToggleOpen(ref _isOpen3))" 
+                                         Class="ml-auto mr-n3 mb-1" 
+                                         Color="Color.Error">Close</MudButton>
+                            </MudPopover>
+                        </MudPaper>
+
+                        <!-- Bulk Adding Option -->
+                        <MudPaper Elevation="2" Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Repeat" Color="Color.Primary" />
+                                <MudStack Style="flex-grow: 1;">
+                                    <MudText Typo="Typo.subtitle1">Bulk Entry Mode</MudText>
+                                    <MudText Typo="Typo.body2">Stay on this page after adding equipment</MudText>
+                                </MudStack>
+                                <MudSwitch @bind-Value="@bulking" 
+                                         Color="Color.Primary" 
+                                         Size="Size.Large" />
+                            </MudStack>
+                        </MudPaper>
+
+                        <!-- Action Buttons -->
+                        <MudStack Spacing="3" Class="mt-4">
+                            <MudButton Variant="Variant.Filled" 
+                                     Size="Size.Large" 
+                                     Color="Color.Primary"
+                                     OnClick="@AddToDB">
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
+                                Add Equipment to System
+                            </MudButton>
+
+                            <MudButton Variant="Variant.Outlined" 
+                                     Size="Size.Large" 
+                                     Color="Color.Default"
+                                     OnClick="ClearFields">
+                                <MudIcon Icon="@Icons.Material.Filled.Clear" Class="mr-2" />
+                                Clear All Fields
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private bool bulking { get; set; }
+    private EquipmentData _equipmentData = new EquipmentData();
+
+    private int nextInstNo;
+    private DateTime? servicestart;
+    private DateTime? serviceend;
+    private bool IsMac = false;
+    private bool IsOLDMachine = false;
+    private bool _isOpen2;     // Popover toggle states
+    private bool _isOpen3;
+
+    private bool hasRendered = false;
+
+    protected override void OnInitialized()
+    {
+        ClearFields();
+        // Set initial machine type
+        UpdateMachineType();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !hasRendered)
+        {
+            hasRendered = true;
+            await LoadFromSession();
+            await LoadUsername();
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveToSession()
+    {
+        if (hasRendered)
+        {
+            await JSRuntime.InvokeVoidAsync("sessionStorageHelper.setItem", "equipmentData", JsonSerializer.Serialize(_equipmentData));
+        }
+    }
+
+    private async Task LoadFromSession()
+    {
+        if (hasRendered)
+        {
+            var json = await JSRuntime.InvokeAsync<string>("sessionStorageHelper.getItem", "equipmentData");
+            if (!string.IsNullOrEmpty(json))
+            {
+                var deserializedData = JsonSerializer.Deserialize<EquipmentData>(json);
+                if (deserializedData != null)
+                {
+                    _equipmentData = deserializedData;
+                    // Update machine type after loading from session
+                    UpdateMachineType();
+                }
+            }
+        }
+    }
+
+    private async Task SaveUsername()
+    {
+        if (hasRendered)
+        {
+            await JSRuntime.InvokeVoidAsync("sessionStorageHelper.setUsername", _equipmentData.Creator_Initials);
+        }
+    }
+
+    private async Task LoadUsername()
+    {
+        if (hasRendered)
+        {
+            var username = await JSRuntime.InvokeAsync<string>("cookieHelper.getCookie", "Creator_Initials");
+            if (!string.IsNullOrEmpty(username))
+            {
+                _equipmentData.Creator_Initials = username;
+                // Update machine type after loading username
+                UpdateMachineType();
+            }
+        }
+    }
+
+
+    private void OnServiceStartDateChanged(DateTime? newStartDate)
+    {
+        // This will be called automatically with the new date value
+        servicestart = newStartDate;
+
+        // Close the popover after the date is selected
+        _isOpen2 = false;
+
+        if (servicestart.HasValue)
+        {
+            // Automatically set the service end date to 4 years after the start date
+            serviceend = servicestart.Value.AddYears(4);
+
+            // substraction of 1 day from the end date
+            serviceend = serviceend.Value.AddDays(-1);
+        }
+    }
+
+    // Method to toggle popovers
+    private void ToggleOpen(ref bool isOpen)
+    {
+        isOpen = !isOpen;
+    }
+
+    // Method to check if required fields in _equipmentData are not null or empty
+    private bool ControlIfNull()
+    {
+        var fields = new[]
+        {
+            _equipmentData.Creator_Initials,
+            _equipmentData.Status,
+            _equipmentData.Serial_No,
+            IsMac ? "N/A" : _equipmentData.Mac_Address1,
+            IsMac ? "N/A" : _equipmentData.UUID,
+            _equipmentData.Product_No,
+            _equipmentData.Department
+        };
+        return fields.All(field => !string.IsNullOrWhiteSpace(field));
+    }
+
+    /// <summary>
+    /// Handles PC Name changes and automatically updates Machine Type
+    /// </summary>
+    /// <param name="newPcName">The new PC name value</param>
+    private async Task OnPcNameChanged(string newPcName)
+    {
+        _equipmentData.PC_Name = newPcName;
+        UpdateMachineType();
+        await SaveToSession();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Handles Status changes and automatically updates Machine Type
+    /// </summary>
+    /// <param name="newStatus">The new status value</param>
+    private async Task OnStatusChanged(string newStatus)
+    {
+        _equipmentData.Status = newStatus;
+        UpdateMachineType();
+        await SaveToSession();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Updates the Machine Type based on current PC_Name and Status
+    /// </summary>
+    private void UpdateMachineType()
+    {
+        _equipmentData.MachineType = EquipmentUtils.DetermineMachineType(_equipmentData.PC_Name, _equipmentData.Status);
+    }
+
+    /// <summary>
+    /// Gets the helper text for the Machine Type field
+    /// </summary>
+    /// <returns>Helper text based on current machine type</returns>
+    private string GetMachineTypeHelperText()
+    {
+        if (_equipmentData.MachineType == "Error")
+        {
+            return "Unique name outside naming convention. Please change manually";
+        }
+        if (_equipmentData.MachineType == "Waiting for PC Name")
+        {
+            return "Enter a PC Name to automatically determine machine type";
+        }
+        return "Automatically determined from PC Name";
+    }
+
+    /// <summary>
+    /// Gets the helper text color for the Machine Type field
+    /// </summary>
+    /// <returns>Color based on current machine type</returns>
+    private Color GetMachineTypeHelperColor()
+    {
+        if (_equipmentData.MachineType == "Error")
+        {
+            return Color.Error;
+        }
+        if (_equipmentData.MachineType == "Waiting for PC Name")
+        {
+            return Color.Warning;
+        }
+        return Color.Default;
+    }
+
+    // Method to add new equipment to the database
+    public async Task AddToDB()
+    {
+        try
+        {
+            // Check if required fields are not null or empty
+            if (!ControlIfNull())
+            {
+                await DialogService.ShowMessageBox("", "Please fill in all required fields.", "Cancel");
+                return;
+            }
+
+            // Check if Serial_No already exists in the machines list
+            if (_Equipment.IsSerialNoTakenInMachines(_equipmentData.Serial_No))
+            {
+                await DialogService.ShowMessageBox("", "The Serial Number already exists in the machines list.", "Warning");
+                return;
+            }
+
+            // Check if this is an OLD machine (use checkbox or automatic detection)
+            bool isOLDMachine = IsOLDMachine || OLDEquipmentService.IsOLDMachine(_equipmentData.PC_Name, _equipmentData.Department);
+
+            // Validate for potential data validation issues
+            var validationIssues = _ValidationService.ValidateEquipmentBeforeSaving(_equipmentData);
+            
+            if (validationIssues.Any())
+            {
+                var issuesSummary = _ValidationService.GetIssuesSummary(validationIssues);
+                
+                var confirmResult = await DialogService.ShowMessageBox(
+                    "Validation Issues Detected",
+                    issuesSummary + "\n\nWould you like to proceed anyway?",
+                    yesText: "Proceed", 
+                    cancelText: "Cancel"
+                );
+                
+                if (confirmResult != true)
+                {
+                    return;
+                }
+            }
+
+            try
+            {
+                var folderPath = "\\Sus-pequip01\\eq_db\\Equip_Expo"; // Optional - will try but continue if it fails
+                EquipmentUtils.ExportTableToExcel(DatabaseHelper.GetConnection().ConnectionString, folderPath);
+            }
+            catch (Exception)
+            {
+                // Continue execution even if Excel export fails
+            }
+
+            // Set non-required fields to "N/A" if they are not filled or if IsMac is true
+            _equipmentData.App_Owner = string.IsNullOrWhiteSpace(_equipmentData.App_Owner) ? "N/A" : _equipmentData.App_Owner;
+            _equipmentData.Mac_Address1 = IsMac || string.IsNullOrWhiteSpace(_equipmentData.Mac_Address1) ? "N/A" : _equipmentData.Mac_Address1;
+            _equipmentData.Mac_Address2 = IsMac || string.IsNullOrWhiteSpace(_equipmentData.Mac_Address2) ? "N/A" : _equipmentData.Mac_Address2;
+            _equipmentData.UUID = IsMac || string.IsNullOrWhiteSpace(_equipmentData.UUID) ? "N/A" : _equipmentData.UUID;
+            _equipmentData.Model_Name_and_No = string.IsNullOrWhiteSpace(_equipmentData.Model_Name_and_No) ? "N/A" : _equipmentData.Model_Name_and_No;
+            _equipmentData.PC_Name = string.IsNullOrWhiteSpace(_equipmentData.PC_Name) ? "N/A" : _equipmentData.PC_Name;
+            _equipmentData.Note = string.IsNullOrWhiteSpace(_equipmentData.Note) ? "N/A" : _equipmentData.Note;
+            
+            // Machine Type is now automatically determined - ensure it's updated before saving
+            UpdateMachineType();
+
+            string dateString = EquipmentUtils.CurrentDayDisplay();
+            string serviceStartString = servicestart?.ToString("yyyy-MM-dd") ?? "N/A";
+            string serviceEndString = serviceend?.ToString("yyyy-MM-dd") ?? "N/A";
+
+            try
+            {
+                if (isOLDMachine)
+                {
+                    // Handle OLD machine
+                    await AddOLDMachineToDB(dateString, serviceStartString, serviceEndString);
+                }
+                else
+                {
+                    // Handle regular machine
+                    await AddRegularMachineToDB(dateString, serviceStartString, serviceEndString);
+                }
+                
+                await SaveUsername(); // Save the username to session storage
+                await DialogService.ShowMessageBox("", "Success! Equipment added.", "Cancel");
+
+                if (bulking == true)
+                {
+                    ClearFieldsForBulking();
+                    StateHasChanged();
+                }
+                else
+                {
+                    NavigationManager.NavigateTo("/DeviceLibrary");
+                }
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await DialogService.ShowMessageBox("", $"Database error: {ex.Message}", "Cancel");
+            }
+        }
+        catch (Exception)
+        {
+            NavigationManager.NavigateTo("/Error");
+        }
+    }
+
+    private Task AddOLDMachineToDB(string dateString, string serviceStartString, string serviceEndString)
+    {
+        // Get the next OLD Inst_No
+        string nextOLDInstNo = OLDEquipmentService.GetNextOLDInstNo();
+        
+        // Check if OLD Inst_No is already taken and increment if necessary
+        while (OLDEquipmentService.IsOLDInstNoTaken(nextOLDInstNo))
+        {
+            // Extract number from format "O-{number}" and increment
+            var numberPart = int.Parse(nextOLDInstNo.Substring(2));
+            nextOLDInstNo = $"O-{numberPart + 1}";
+        }
+
+        // Create OLD equipment data
+        var oldEquipmentData = new OLDEquipmentData
+        {
+            Entry_Date = dateString,
+            Inst_No = nextOLDInstNo,
+            Creator_Initials = _equipmentData.Creator_Initials,
+            App_Owner = _equipmentData.App_Owner,
+            Status = _equipmentData.Status,
+            Serial_No = _equipmentData.Serial_No,
+            Mac_Address1 = _equipmentData.Mac_Address1,
+            Mac_Address2 = _equipmentData.Mac_Address2,
+            UUID = _equipmentData.UUID,
+            Product_No = _equipmentData.Product_No,
+            Model_Name_and_No = _equipmentData.Model_Name_and_No,
+            Department = _equipmentData.Department,
+            PC_Name = _equipmentData.PC_Name,
+            Service_Start = serviceStartString,
+            Service_Ends = serviceEndString,
+            Note = _equipmentData.Note,
+            MachineType = _equipmentData.MachineType
+        };
+
+        OLDEquipmentService.AddEntry(oldEquipmentData);
+        return Task.CompletedTask;
+    }
+
+    private async Task AddRegularMachineToDB(string dateString, string serviceStartString, string serviceEndString)
+    {
+        // Get the next Inst_No
+        nextInstNo = _Equipment.GetNextInstNo();
+        if (nextInstNo == 0)
+        {
+            await DialogService.ShowMessageBox("", "Failed to retrieve the next Inst_No. Contact mpark.", "Cancel");
+            return;
+        }
+
+        // Check if Inst_No is already taken and increment if necessary
+        while (_Equipment.IsInstNoTaken(nextInstNo))
+        {
+            nextInstNo++;
+        }
+
+        _equipmentData.Inst_No = nextInstNo; // Assign nextInstNo to _equipmentData.Inst_No
+        _equipmentData.Service_Start = serviceStartString;
+        _equipmentData.Service_Ends = serviceEndString;
+        _equipmentData.Entry_Date = dateString;
+        
+        _Equipment.AddEntry(_equipmentData);
+    }
+
+
+    // Method to clear fields
+    private void ClearFields()
+    {
+        _equipmentData.Creator_Initials = "";
+        _equipmentData.App_Owner = "";
+        _equipmentData.Status = "";
+        _equipmentData.Serial_No = "";
+        _equipmentData.Mac_Address1 = "";
+        _equipmentData.Mac_Address2 = "";
+        _equipmentData.UUID = "";
+        _equipmentData.Product_No = "";
+        _equipmentData.Model_Name_and_No = "";
+        _equipmentData.PC_Name = "";
+        _equipmentData.Note = "";
+        _equipmentData.Department = "";
+        IsMac = false;
+        IsOLDMachine = false;
+        // Update machine type after clearing fields
+        UpdateMachineType();
+    }
+
+    // Method to clear fields
+    private void ClearFieldsForBulking()
+    {
+        //_equipmentData.Creator_Initials = "";
+        _equipmentData.App_Owner = "";
+        //_equipmentData.Status = "";
+        _equipmentData.Serial_No = "";
+        _equipmentData.Mac_Address1 = "";
+        _equipmentData.Mac_Address2 = "";
+        _equipmentData.UUID = "";
+        _equipmentData.Product_No = "";
+        //_equipmentData.Model_Name_and_No = "";
+        _equipmentData.PC_Name = "";
+        _equipmentData.Note = "";
+        //_equipmentData.Department = "";
+        // Update machine type after clearing fields for bulking
+        UpdateMachineType();
+    }
+}

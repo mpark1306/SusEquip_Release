@@ -1,0 +1,390 @@
+﻿@page "/Info"
+
+<MudPaper Class="pa-6 mb-4" Elevation="3">
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="4">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Size="Size.Large" />
+            <div>
+                <MudText Typo="Typo.h3" Class="mb-2">SusEquip Information Hub</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Comprehensive guides and documentation for the SusEquip equipment management system.
+                </MudText>
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="3" Class="mt-2">
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">Version: .NET 8.0</MudChip>
+                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small">Phase 5.5 Complete</MudChip>
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Updated: October 2025</MudChip>
+                </MudStack>
+            </div>
+        </MudStack>
+    </MudPaper>using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <!-- Header Section -->
+    <MudPaper Class="pa-6 mb-4" Elevation="3">
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="4">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" Size="Size.Large" />
+            <div>
+                <MudText Typo="Typo.h3" Class="mb-2">SusEquip Information Hub</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Comprehensive guides and documentation for using the SusEquip equipment management system.
+                </MudText>
+            </div>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Tabs -->
+    <MudTabs>
+
+        <!-- MAIN PAGES Tab -->
+        <MudTabPanel Text="Main Pages">
+            <!-- Index Page Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Dashboard (Index Page)</MudText>
+            <MudText Typo="Typo.body1">
+                The Dashboard serves as the homepage and provides comprehensive access to all application features.
+                <br /><br />
+                <ul>
+                    <li><strong>Quick Navigation:</strong> Six main buttons for Device Library, New Machine, Where-To-Go, Info Page, Update Log, and User Settings.</li>
+                    <li><strong>Equipment Statistics:</strong> Real-time dashboard showing counts for Active, Quarantined, Used, and New equipment with automatic caching and manual refresh capability.</li>
+                    <li><strong>Last Updated Timestamp:</strong> Shows when statistics were last refreshed for data freshness awareness.</li>
+                    <li><strong>Progress Indicators:</strong> Loading states and progress bars for better user experience.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Device Library Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Device Library (Machines Library)</MudText>
+            <MudText Typo="Typo.body1">
+                The Device Library is the main equipment management interface with comprehensive search and filtering capabilities.
+                <br />
+                <ul>
+                    <li><strong>Multi-Tab View:</strong> Organized tabs for Active, Quarantined, Used, New, and All equipment with status-specific filtering.</li>
+                    <li><strong>Advanced Search:</strong> Expandable search panels for each tab with fields including Inst No, PC Name, Department, App Owner, Serial No, MAC Address, and date ranges.</li>
+                    <li><strong>Data Grid:</strong> Interactive table with sorting, filtering, and pagination featuring columns for all equipment details.</li>
+                    <li><strong>Quick Actions:</strong> Row-level buttons for Edit, History, Print, and Add to DTUPC operations.</li>
+                    <li><strong>Export Functionality:</strong> Export selected equipment data to various formats.</li>
+                    <li><strong>Child Row Details:</strong> Expandable rows showing additional equipment specifications and technical details.</li>
+                    <li><strong>Real-time Updates:</strong> Live data with automatic refresh and state management.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Add New Device Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Add New Device</MudText>
+            <MudText Typo="Typo.body1">
+                The Add New Device page provides a comprehensive form for registering new equipment in the system with advanced validation and user-friendly features.
+                <br /><br />
+                <ul>
+                    <li>
+                        <strong>Equipment Information:</strong> Fields for Creator, Machine Type, App Owner, Status,
+                        Serial No, MAC Addresses (multiple), UUID, Product No, Model Name, Department, PC Name, and detailed notes.
+                    </li>
+                    <li><strong>Advanced Data Validation:</strong> Intelligent validation system that detects potential data quality issues before saving, including duplicate checks, format validation, and business rule compliance.</li>
+                    <li><strong>Validation Warning System:</strong> Interactive warnings with clear, multi-line formatted messages that allow users to review issues and choose to proceed or cancel.</li>
+                    <li><strong>Smart Machine Type Detection:</strong> Automatically determines machine type based on PC name and status with manual override capability.</li>
+                    <li><strong>Service Management:</strong> Date pickers for Service Start and Service End dates with automatic 4-year calculation and validation.</li>
+                    <li><strong>Session Persistence:</strong> Form data is automatically saved to session storage, preventing data loss during navigation or browser refresh.</li>
+                    <li><strong>Bulk Entry Mode:</strong> Optional mode for adding multiple equipment entries efficiently while retaining certain field values.</li>
+                    <li><strong>Real-time Feedback:</strong> Instant validation feedback and error handling with user-friendly messages.</li>
+                    <li><strong>Auto-population:</strong> Smart defaults and user preferences integration for faster data entry.</li>
+                    <li><strong>Mac Device Support:</strong> Special handling for Apple Mac devices with appropriate field disabling and validation adjustments.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Machine Models Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Machine Models</MudText>
+            <MudText Typo="Typo.body1">
+                The Machine Models page manages the catalog of available machine configurations and specifications.
+                <br /><br />
+                <ul>
+                    <li>
+                        <strong>Model Registration:</strong> Comprehensive form for adding new machine models with
+                        fields for Firm, Model Name, Type, RAM, Drive GB, Drive Type, Screen Inch, Keyboard Language,
+                        and various hardware specification checkboxes.
+                    </li>
+                    <li>
+                        <strong>Model Library:</strong> Searchable and filterable list of existing machine models
+                        from the database with full specification details.
+                    </li>
+                    <li><strong>Specification Management:</strong> Detailed hardware and software configuration tracking.</li>
+                    <li><strong>Integration:</strong> Models are referenced when adding new equipment for consistency.</li>
+                </ul>
+                <br />
+            </MudText>
+        </MudTabPanel>
+
+        <!-- TOOL PAGES Tab -->
+        <MudTabPanel Text="Tool Pages">
+            <!-- Update Log Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Update Log</MudText>
+            <MudText Typo="Typo.body1">
+                The Update Log page provides a timeline of updates and changes made to the application.<br /><br />
+                <ul>
+                    <li><strong>Timeline:</strong> Displays updates with dates and descriptions of changes.<br /><br /></li>
+                </ul>
+            </MudText>
+
+            <!-- Where-To-Go Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Where-To-Go</MudText>
+            <MudText Typo="Typo.body1">
+                The Where-To-Go page provides shortcuts to various sites used for daily operations.
+                <br /><br />
+                <ul>
+                    <li><strong>Links:</strong> Displays a table of links with names, URLs, and notes.</li>
+                    <li><strong>Remote Desktop to Servers:</strong> Lists server names for remote desktop access.</li>
+                    <li><strong>File Locations:</strong> Lists file locations for documentation and software distribution.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- User Settings Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">User Settings</MudText>
+            <MudText Typo="Typo.body1">
+                The User Settings page allows users to customize their application experience and preferences with a simplified, reliable interface.
+                <br /><br />
+                <ul>
+                    <li><strong>Username Configuration:</strong> Set creator initials for equipment tracking and audit trails.</li>
+                    <li><strong>Advanced Theme System:</strong> Choose from 6 distinct theme options - Green Light, Green Dark, Rene Light, Rene Dark, Blue Light, and Blue Dark.</li>
+                    <li><strong>Direct Theme Selection:</strong> Simplified approach with immediate theme switching - no complex toggle logic required.</li>
+                    <li><strong>Persistent Settings:</strong> User preferences are saved via cookies and persist across sessions.</li>
+                    <li><strong>Real-time Application:</strong> Theme changes are applied immediately without restart or page reload.</li>
+                    <li><strong>Improved Reliability:</strong> Eliminated complex dark mode toggle for better user experience and system stability.</li>
+                </ul>
+                <br />
+            </MudText>
+        </MudTabPanel>
+
+        <!-- DIALOGS Tab -->
+        <MudTabPanel Text="Dialogs">
+            <!-- Device Details Dialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Device Details Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The Device Details Dialog provides comprehensive device information display with integrated action capabilities accessible from DataValidation.razor.
+                <br /><br />
+                <ul>
+                    <li><strong>Comprehensive View:</strong> Complete device information layout with organized sections for basic info, hardware specifications, service details, and notes.</li>
+                    <li><strong>Action Integration:</strong> Direct access to History, Add Entry, Documentation copying, and Add to DTUPC functions from within the dialog.</li>
+                    <li><strong>Service Status Monitoring:</strong> Visual indicators and alerts for service expiration status with color-coded severity levels.</li>
+                    <li><strong>OLD Machine Support:</strong> Special handling for legacy machines with proper Inst_No formatting and data source management.</li>
+                    <li><strong>Modern UI Design:</strong> Responsive layout with gradient headers, organized card sections, and intuitive navigation.</li>
+                    <li><strong>Validation Workflow Integration:</strong> Seamlessly accessible from validation issue rows for immediate device context during data review.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Data Correction Dialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Data Correction Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The Data Correction Dialog enables users to correct validation issues with automatic user preference integration.
+                <br /><br />
+                <ul>
+                    <li><strong>Automatic Initials:</strong> Creator initials are automatically populated from user preferences via CookieService.</li>
+                    <li><strong>Validation Integration:</strong> Direct correction of identified data validation issues with structured workflow.</li>
+                    <li><strong>User Session Persistence:</strong> Maintains user preferences and settings across dialog sessions.</li>
+                    <li><strong>Streamlined Workflow:</strong> Reduces manual data entry with smart defaults and auto-population.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Ignore Issue Dialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Ignore Issue Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The Ignore Issue Dialog allows users to mark validation issues as acknowledged with tracking information.
+                <br /><br />
+                <ul>
+                    <li><strong>Automatic Initials:</strong> Creator initials are automatically populated from user preferences via CookieService.</li>
+                    <li><strong>Issue Tracking:</strong> Provides audit trail for ignored validation issues with user identification.</li>
+                    <li><strong>Reason Documentation:</strong> Allows users to document reasons for ignoring specific validation issues.</li>
+                    <li><strong>Consistent User Experience:</strong> Matches the auto-population behavior found throughout the application.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Edit Dialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Edit Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The Edit Dialog provides comprehensive equipment modification capabilities with full field access.
+                <br /> <br />
+                <ul>
+                    <li>
+                        <strong>Complete Equipment Form:</strong> All equipment fields including Inst No, PC Name, Creator, App Owner,
+                        Machine Type, Status, Serial No, MAC Addresses, UUID, Product No, Model Name, Department,
+                        Service Start, Service End, and detailed notes.
+                    </li>
+                    <li><strong>Field Validation:</strong> Real-time validation ensuring data integrity and format compliance.</li>
+                    <li><strong>Change Tracking:</strong> Tracks modifications for audit trails and history logging.</li>
+                    <li><strong>Apply Changes:</strong> Saves modifications with confirmation and error handling.</li>
+                    <li><strong>Cancel Protection:</strong> Prompts for unsaved changes before closing dialog.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- History Dialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">History Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The History Dialog provides detailed audit trails and change history for equipment records.
+                <br /><br />
+                <ul>
+                    <li>
+                        <strong>Complete History:</strong> Chronological list of all changes with timestamps, user information,
+                        field modifications, and change descriptions.
+                    </li>
+                    <li><strong>Searchable Records:</strong> Filter and search through historical changes by date, user, or field.</li>
+                    <li><strong>Change Details:</strong> Before/after values for modified fields with change context.</li>
+                    <li><strong>Export Capability:</strong> Export history records for compliance and reporting purposes.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Print Dialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Print Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The Print Dialog enables formatted printing of equipment details and documentation.
+                <br /><br />
+                <ul>
+                    <li><strong>Formatted Output:</strong> Professional equipment documentation layout with all relevant details.</li>
+                    <li><strong>Print Preview:</strong> Shows formatted output before printing for verification.</li>
+                    <li><strong>Multiple Formats:</strong> Support for different paper sizes and orientations.</li>
+                    <li><strong>Selective Printing:</strong> Option to include/exclude specific fields or sections.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- AddToDTUPCDialog Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Add to DTUPC Dialog</MudText>
+            <MudText Typo="Typo.body1">
+                The Add to DTUPC Dialog facilitates integration with external DTUPC (Device Tracking and User PC) systems.
+                <br /><br />
+                <ul>
+                    <li><strong>DTUPC Integration:</strong> Fields for Device Name, Device Type, and DTUPC-specific metadata.</li>
+                    <li><strong>Data Mapping:</strong> Automatic population from existing equipment data with manual override options.</li>
+                    <li><strong>Validation:</strong> Ensures DTUPC system compatibility and required field completion.</li>
+                    <li><strong>Status Tracking:</strong> Monitors submission status and provides feedback on integration success.</li>
+                </ul>
+                <br />
+            </MudText>
+        </MudTabPanel>
+
+        <!-- SHARED COMPONENTS Tab -->
+        <MudTabPanel Text="Shared Components">
+            <!-- NavMenu Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Navigation Menu</MudText>
+            <MudText Typo="Typo.body1">
+                The Navigation Menu provides structured access to all application features with intuitive categorization.
+                <br /><br />
+                <ul>
+                    <li><strong>Main Navigation:</strong> Primary links including Home (Dashboard), Device Library, Add New Device, and Machine Models.</li>
+                    <li><strong>Tool Access:</strong> Secondary navigation for Update Log, Where-To-Go, Info Page, and User Settings.</li>
+                    <li><strong>Visual Indicators:</strong> Icons and active state highlighting for current page identification.</li>
+                    <li><strong>Responsive Design:</strong> Adapts to different screen sizes with collapsible menu options.</li>
+                    <li><strong>User Context:</strong> Shows current user information and authentication status.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- MainLayout Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Main Layout</MudText>
+            <MudText Typo="Typo.body1">
+                The Main Layout component provides the application's structural foundation and global UI management.
+                <br /><br />
+                <ul>
+                    <li><strong>Layout Structure:</strong> Defines the overall application layout including navigation, content area, and responsive breakpoints.</li>
+                    <li><strong>Theme Management:</strong> Handles application-wide theme switching and dark/light mode toggling.</li>
+                    <li><strong>Global State:</strong> Manages cascading parameters for user preferences and application settings.</li>
+                    <li><strong>Error Boundaries:</strong> Provides error handling and recovery mechanisms for robust user experience.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Error Components Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Error Components</MudText>
+            <MudText Typo="Typo.body1">
+                Specialized components for error handling and user feedback throughout the application.
+                <br /><br />
+                <ul>
+                    <li><strong>Custom Error Boundary:</strong> Catches and handles component-level errors gracefully.</li>
+                    <li><strong>Error Component:</strong> Displays user-friendly error messages with recovery options.</li>
+                    <li><strong>Loading States:</strong> Progress indicators and skeleton loaders for improved perceived performance.</li>
+                    <li><strong>Validation Feedback:</strong> Real-time form validation and error messaging.</li>
+                </ul>
+                <br />
+            </MudText>
+        </MudTabPanel>
+
+        <!-- CORE SERVICES Tab -->
+        <MudTabPanel Text="Core Services">
+            <!-- ApiService Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">API Service</MudText>
+            <MudText Typo="Typo.body1">
+                The API Service manages external system integrations and authentication workflows.
+                <br /><br />
+                <ul>
+                    <li><strong>Authentication:</strong> Handles token retrieval and management for secure API communications.</li>
+                    <li><strong>External Integrations:</strong> Manages connections to DTUPC and other external systems.</li>
+                    <li><strong>Error Handling:</strong> Robust error management with retry logic and fallback mechanisms.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- EquipmentService Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Equipment Service</MudText>
+            <MudText Typo="Typo.body1">
+                The Equipment Service provides comprehensive equipment data management and business logic.
+                <br /><br />
+                <ul>
+                    <li><strong>Data Retrieval:</strong> Methods for getting Active, Quarantined, Used, and New equipment with filtering and pagination.</li>
+                    <li><strong>CRUD Operations:</strong> Create, Read, Update, and Delete operations for equipment records.</li>
+                    <li><strong>Search and Filter:</strong> Advanced search capabilities with multiple criteria and date range filtering.</li>
+                    <li><strong>Status Management:</strong> Equipment lifecycle management and status transitions.</li>
+                    <li><strong>Validation:</strong> Business rule validation and data integrity enforcement.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- CookieService Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Cookie Service</MudText>
+            <MudText Typo="Typo.body1">
+                The Cookie Service manages client-side storage for user preferences and session data.
+                <br /><br />
+                <ul>
+                    <li><strong>User Preferences:</strong> Stores theme selection, dark mode preference, and user initials.</li>
+                    <li><strong>Session Management:</strong> Maintains user settings across browser sessions with configurable expiration.</li>
+                    <li><strong>Security:</strong> Secure cookie handling with appropriate flags and encryption where needed.</li>
+                    <li><strong>API Methods:</strong> SetCookie, GetCookie, and DeleteCookie with async/await support.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Database Layer Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Database Layer</MudText>
+            <MudText Typo="Typo.body1">
+                Entity Framework Core-based data access layer providing robust database operations.
+                <br /><br />
+                <ul>
+                    <li><strong>Data Context:</strong> Centralized database context managing equipment, machine models, and user data.</li>
+                    <li><strong>Entity Models:</strong> Strongly-typed models for Equipment, MachineData, DTUPC logs, and system entities.</li>
+                    <li><strong>Migrations:</strong> Database schema versioning and deployment management.</li>
+                    <li><strong>Performance:</strong> Optimized queries with caching and connection pooling.</li>
+                </ul>
+                <br />
+            </MudText>
+
+            <!-- Dashboard Cache Service Card -->
+            <MudText Typo="Typo.h5" Class="mb-2">Dashboard Cache Service</MudText>
+            <MudText Typo="Typo.body1">
+                Performance optimization service providing intelligent caching for dashboard statistics.
+                <br /><br />
+                <ul>
+                    <li><strong>Smart Caching:</strong> Automatically caches dashboard statistics with configurable expiration.</li>
+                    <li><strong>Cache Management:</strong> Manual refresh capability and automatic cache invalidation.</li>
+                    <li><strong>Performance Monitoring:</strong> Tracks cache hit rates and database query optimization.</li>
+                    <li><strong>Real-time Updates:</strong> Balances real-time data with performance through intelligent refresh strategies.</li>
+                </ul>
+                <br />
+            </MudText>
+        </MudTabPanel>
+
+    </MudTabs>
+</MudContainer>
+
+@code {
+}

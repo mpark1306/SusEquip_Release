@@ -1,0 +1,183 @@
+﻿@page "/WhereToGo"
+@using Newtonsoft.Json
+@using System.IO
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudCard Elevation="4" Class="mb-6">
+        <MudCardContent Class="pa-6">
+            <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.h3" Align="Align.Center">Where-To-Go</MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">
+                    Shortcuts to various pages for daily operations
+                </MudText>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+
+    <MudGrid Spacing="4">
+        <!-- Main Links Table -->
+        <MudItem xs="12" md="9">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Link" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6">Links</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTable Items="@links" Filter="new Func<LinkItem,bool>(FilterFunc1)" Elevation="0" Hover="true" Striped="true">
+                        <ToolBarContent>
+                            <MudSpacer />
+                            <MudTextField @bind-Value="_searchString" 
+                                        Placeholder="Search links..." 
+                                        Adornment="Adornment.Start" 
+                                        AdornmentIcon="@Icons.Material.Filled.Search" 
+                                        IconSize="Size.Medium" 
+                                        Variant="Variant.Outlined"
+                                        Class="mt-0" />
+                        </ToolBarContent>
+                        <HeaderContent>
+                            <MudTh><MudText Typo="Typo.subtitle2">Name</MudText></MudTh>
+                            <MudTh><MudText Typo="Typo.subtitle2">URL</MudText></MudTh>
+                            <MudTh><MudText Typo="Typo.subtitle2">Notes</MudText></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd><MudText>@context.Name</MudText></MudTd>
+                            <MudTd>
+                                <MudButton Href="@context.Url" 
+                                         Target="_blank" 
+                                         Variant="Variant.Text" 
+                                         Color="Color.Primary"
+                                         StartIcon="@Icons.Material.Filled.OpenInNew"
+                                         Size="Size.Small">
+                                    Open Link
+                                </MudButton>
+                            </MudTd>
+                            <MudTd><MudText>@context.Notes</MudText></MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Side Panel -->
+        <MudItem xs="12" md="3">
+            <MudStack Spacing="4">
+                <!-- Remote Desktop Section -->
+                <MudCard Elevation="4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">Remote Desktop</MudText>
+                            </MudStack>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudList Clickable="true" Dense="true" DisableGutters="true" T="string">
+                            <MudListItem Text="ait-pms02" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("ait-pms02"))" T="string" />
+                            <MudListItem Text="byg-cadm1" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("byg-cadm1"))" T="string" />
+                            <MudListItem Text="bb-caadm" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("bb-caadm"))" T="string" />
+                            <MudListItem Text="byg-csafeq2" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("cme-psafeq01"))" T="string" />
+                            <MudListItem Text="byg-cvo2" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("byg-cvo2"))" T="string" />
+                            <MudListItem Text="byg-cls01" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("byg-cls01"))" T="string" />
+                            <MudListItem Text="byg-cls05" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("byg-cls05"))" T="string" />
+                            <MudListItem Text="byg-cls07" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("byg-cls07"))" T="string" />
+                            <MudListItem Text="byg-cls17" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("byg-cls17"))" T="string" />
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- File Locations Section -->
+                <MudCard Elevation="4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">File Locations</MudText>
+                            </MudStack>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudList Clickable="true" Dense="true" DisableGutters="true" T="string">
+                            <MudListItem Text="Opret_PC.pdf" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("\\\\ait-pdfs\\QDrev\\SUS\\Administration\\IT\\Dokumentation\\Vejledninger\\BrugerAdministration\\Oprettelse_af_nye_brugere_samt_PC\\Opret_PC.pdf"))" T="string" />
+                            <MudListItem Text="Nedlæg_PC.pdf" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("\\\\ait-pdfs\\QDrev\\SUS\\Administration\\IT\\Dokumentation\\Vejledninger\\BrugerAdministration\\Oprettelse_af_nye_brugere_samt_PC\\Nedlæg_PC.pdf"))" T="string" />
+                            <MudListItem Text="DTU-PC SCCM Klienten" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("\\\\ait-pcmsrc01\\dtupc$\\Client"))" T="string" />
+                            <MudListItem Text="DTU-PC SCCM Software dist" Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Secondary" OnClick="@(() => CopyToClipboard("\\\\ait-pcmsrc01\\dtupc$\\Software"))" T="string" />
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Info Section -->
+    <MudCard Elevation="2" Class="mt-6">
+        <MudCardContent Class="pa-4">
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" />
+                <MudText Typo="Typo.h6">About</MudText>
+            </MudStack>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">
+                Shortcuts to various pages we use for daily operations.<br />
+                Originally designed by René, and now continued in SusEquip.<br />
+                If you have suggestions for improvements or additions, please contact either Tian or Mark.
+            </MudText>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _searchString = "";
+    private IEnumerable<LinkItem> links = new List<LinkItem>();
+
+    public class LinkItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+    }
+
+    public class RootObject
+    {
+        public List<LinkItem> links { get; set; } = new List<LinkItem>();
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        string jsonData = File.ReadAllText("Data/Wheretogo.json");
+        var rootObject = JsonConvert.DeserializeObject<RootObject>(jsonData);
+        links = rootObject?.links ?? new List<LinkItem>();
+    }
+
+    private bool FilterFunc1(LinkItem link) => FilterFunc(link, _searchString);
+
+    private bool FilterFunc(LinkItem link, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (link.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (link.Url.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ($"{link.Name} {link.Url} {link.Notes}".Contains(searchString))
+            return true;
+        return false;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        await JSRuntime.InvokeVoidAsync("copyTextToClipboard", text);
+        Snackbar.Add("Copied to clipboard!", Severity.Success);
+    }
+}

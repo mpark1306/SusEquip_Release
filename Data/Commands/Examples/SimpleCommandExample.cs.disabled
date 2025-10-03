@@ -1,0 +1,284 @@
+using Microsoft.Extensions.Logging;
+using SusEquip.Data.Commands;
+using SusEquip.Data.Commands.Equipment;
+using SusEquip.Data.Models;
+using SusEquip.Data.Services;
+
+namespace SusEquip.Data.Commands.Examples;
+
+/// <summary>
+/// Simplified example demonstrating Command Pattern usage in SusEquip
+/// Phase 4: Commands and Advanced Features
+/// 
+/// This example shows the basic structure and workflow of using commands.
+/// In real usage, you would inject the required services through DI.
+/// </summary>
+public static class SimpleCommandExample
+{
+    /// <summary>
+    /// Example of how to use the AddEquipmentCommand
+    /// </summary>
+    public static async Task<EquipmentOperationResult> ExampleAddEquipment(
+        ICommandExecutor commandExecutor,
+        IEquipmentServiceSync equipmentService,
+        DataValidationService validationService,
+        ILogger<AddEquipmentCommand> logger)
+    {
+        // Create new equipment data
+        var equipment = new EquipmentData
+        {
+            PC_Name = "EXAMPLE-PC-001",
+            Serial_No = "EX123456789",
+            Status = "Active",
+            Department = "IT Department",
+            App_Owner = "john.doe",
+            Creator_Initials = "JD",
+            Entry_Date = DateTime.Now.ToString("yyyy-MM-dd"),
+            MachineType = "Desktop",
+            Mac_Address1 = "00:11:22:33:44:55",
+            UUID = Guid.NewGuid().ToString(),
+            Model_Name_and_No = "Dell OptiPlex 7090"
+        };
+
+        // Create and execute the command
+        var command = new AddEquipmentCommand(equipment, equipmentService, logger);
+        var result = await commandExecutor.ExecuteAsync(command);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Example of how to use the UpdateEquipmentStatusCommand
+    /// </summary>
+    public static async Task<EquipmentOperationResult> ExampleUpdateStatus(
+        ICommandExecutor commandExecutor,
+        IEquipmentServiceSync equipmentService,
+        ILogger<UpdateEquipmentStatusCommand> logger,
+        int equipmentId = 1,
+        int instNo = 1001,
+        string newStatus = "In Use")
+    {
+        // Create and execute the command
+        var command = new UpdateEquipmentStatusCommand(
+            instNo, 
+            newStatus, 
+            "admin", 
+            equipmentService, 
+            logger);
+
+        var result = await commandExecutor.ExecuteAsync(command);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Example of how to use the DeleteEquipmentCommand
+    /// </summary>
+    public static async Task<DeleteResult> ExampleDeleteEquipment(
+        ICommandExecutor commandExecutor,
+        IEquipmentServiceSync equipmentService,
+        ILogger<DeleteEquipmentCommand> logger,
+        int equipmentId = 1,
+        int instNo = 1001)
+    {
+        // Create and execute the command
+        var command = new DeleteEquipmentCommand(
+            equipmentId, 
+            instNo, 
+            "admin", 
+            "Equipment deletion via command pattern",
+            false, // forceDelete
+            equipmentService, 
+            logger);
+
+        var result = await commandExecutor.ExecuteAsync(command);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Example of how to use the BulkImportEquipmentCommand
+    /// </summary>
+    public static async Task<ImportResult> ExampleBulkImport(
+        ICommandExecutor commandExecutor,
+        IEquipmentServiceSync equipmentService,
+        DataValidationService validationService,
+        ILogger<BulkImportEquipmentCommand> logger)
+    {
+        // Create sample equipment data
+        var equipmentList = new List<EquipmentData>();
+        for (int i = 1; i <= 5; i++)
+        {
+            equipmentList.Add(new EquipmentData
+            {
+                PC_Name = $"BULK-PC-{i:D3}",
+                Serial_No = $"BLK{DateTime.Now.Ticks}{i}",
+                Status = "Active",
+                Department = "Bulk Import Test",
+                App_Owner = "bulk.admin",
+                Creator_Initials = "BA",
+                Entry_Date = DateTime.Now.ToString("yyyy-MM-dd"),
+                MachineType = "Desktop",
+                Mac_Address1 = $"00:11:22:33:44:{i:X2}",
+                UUID = Guid.NewGuid().ToString(),
+                Model_Name_and_No = $"Test Model {i}"
+            });
+        }
+
+        // Create and execute the command
+        var command = new BulkImportEquipmentCommand(
+            equipmentList, 
+            "admin", 
+            true, // validateBeforeImport
+            equipmentService, 
+            validationService, 
+            logger);
+
+        var result = await commandExecutor.ExecuteAsync(command);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Complete workflow example showing all commands in sequence
+    /// </summary>
+    public static async Task<string> CompleteWorkflowExample(
+        ICommandExecutor commandExecutor,
+        IEquipmentServiceSync equipmentService,
+        DataValidationService validationService,
+        ILoggerFactory loggerFactory)
+    {
+        var results = new List<string>();
+
+        try
+        {
+            // Step 1: Add Equipment
+            results.Add("=== Adding Equipment ===");
+            var addResult = await ExampleAddEquipment(
+                commandExecutor,
+                equipmentService,
+                validationService,
+                loggerFactory.CreateLogger<AddEquipmentCommand>());
+
+            if (addResult.Success)
+            {
+                results.Add($"✓ Equipment added successfully");
+            }
+            else
+            {
+                results.Add($"✗ Failed to add equipment: {addResult.Message}");
+                return string.Join("\n", results);
+            }
+
+            // Step 2: Update Status (assuming we have equipment with ID 1)
+            results.Add("\n=== Updating Equipment Status ===");
+            var updateResult = await ExampleUpdateStatus(
+                commandExecutor,
+                equipmentService,
+                loggerFactory.CreateLogger<UpdateEquipmentStatusCommand>());
+
+            if (updateResult.Success)
+            {
+                results.Add($"✓ Equipment status updated successfully");
+            }
+            else
+            {
+                results.Add($"✗ Failed to update equipment status: {updateResult.Message}");
+            }
+
+            // Step 3: Bulk Import
+            results.Add("\n=== Bulk Import ===");
+            var bulkResult = await ExampleBulkImport(
+                commandExecutor,
+                equipmentService,
+                validationService,
+                loggerFactory.CreateLogger<BulkImportEquipmentCommand>());
+
+            results.Add($"✓ Bulk import completed: {bulkResult.SuccessfulItems.Count} successful, {bulkResult.FailedItems.Count} failed");
+
+            // Step 4: Note about deletion (we won't actually delete in this example)
+            results.Add("\n=== Delete Equipment (Example Structure) ===");
+            results.Add("// To delete equipment, use:");
+            results.Add("// var deleteResult = await ExampleDeleteEquipment(commandExecutor, equipmentService, logger, equipmentId, instNo);");
+
+            results.Add("\n=== Command Pattern Benefits Demonstrated ===");
+            results.Add("✓ Centralized logging and performance monitoring via CommandExecutor");
+            results.Add("✓ Consistent error handling across all operations");
+            results.Add("✓ Separation of concerns between business logic and execution");
+            results.Add("✓ Easy testing and maintainability");
+            results.Add("✓ Audit trail and validation built into each command");
+
+        }
+        catch (Exception ex)
+        {
+            results.Add($"\n✗ Workflow failed with exception: {ex.Message}");
+        }
+
+        return string.Join("\n", results);
+    }
+}
+
+/// <summary>
+/// Usage instructions and benefits of the Command Pattern implementation
+/// </summary>
+public static class CommandPatternUsageInstructions
+{
+    public const string Usage = @"
+=== SusEquip Command Pattern Usage Guide ===
+
+1. DEPENDENCY INJECTION SETUP (Already done in Program.cs):
+   - ICommandExecutor registered as scoped
+   - All command classes registered as transient
+   - Services required by commands are available
+
+2. USING COMMANDS IN YOUR CODE:
+   
+   // In a controller or service, inject ICommandExecutor
+   public class EquipmentController : Controller
+   {
+       private readonly ICommandExecutor _commandExecutor;
+       // ... other dependencies
+       
+       public async Task<IActionResult> AddEquipment(EquipmentData equipment)
+       {
+           var command = new AddEquipmentCommand(equipment, _equipmentService, _validationService, _logger);
+           var result = await _commandExecutor.ExecuteAsync(command);
+           
+           if (result.Success)
+               return Ok(result);
+           else
+               return BadRequest(result.Message);
+       }
+   }
+
+3. BENEFITS PROVIDED:
+   - Automatic performance logging
+   - Centralized error handling
+   - Consistent result format
+   - Built-in validation
+   - Audit trail capabilities
+   - Easy unit testing
+   - Separation of concerns
+
+4. COMMAND TYPES AVAILABLE:
+   - AddEquipmentCommand: Add new equipment with validation
+   - UpdateEquipmentStatusCommand: Update equipment status with audit
+   - DeleteEquipmentCommand: Safely delete equipment with checks
+   - BulkImportEquipmentCommand: Import multiple equipment records
+
+5. ERROR HANDLING:
+   All commands use custom exception types:
+   - ValidationException: Data validation failures
+   - DuplicateException: Duplicate record attempts
+   - NotFoundException: Record not found
+   - DatabaseException: Database operation failures
+   - BusinessRuleException: Business logic violations
+
+6. EXTENDING THE PATTERN:
+   To add new commands:
+   - Inherit from BaseCommand<T> or BaseCommand
+   - Implement ExecuteAsync method
+   - Add validation and business logic
+   - Register in Program.cs DI container
+";
+}

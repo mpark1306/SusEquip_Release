@@ -1,0 +1,791 @@
+@page "/DataValidation"
+@using MudBlazor
+@using SusEquip.Data.Models
+@using SusEquip.Data.Services
+@using SusEquip.Data.Interfaces.Services
+@using SusEquip.Pages.Dialog
+@inject IDataValidationService ValidationService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Data Validation & Correction</PageTitle>
+
+<!-- Header Section -->
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">
+        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Large" />
+            <MudText Typo="Typo.h3" Align="Align.Center">
+                Data Validation & Correction
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                Review and fix potential data quality issues in the equipment database
+            </MudText>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Tabs for Active, Ignored, and Solved Issues -->
+    <MudTabs Elevation="4" Rounded="true" Centered="true" Outlined="true" Color="@Color.Primary">
+        <MudTabPanel Text="Active Issues">
+            <!-- Summary Cards -->
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.h4" Color="Color.Error">@highIssuesCount</MudText>
+                                    <MudText Typo="Typo.body2">High Priority</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.h4" Color="Color.Warning">@mediumIssuesCount</MudText>
+                                    <MudText Typo="Typo.body2">Medium Priority</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.h4" Color="Color.Info">@lowIssuesCount</MudText>
+                                    <MudText Typo="Typo.body2">Low Priority</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Size="Size.Large" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.h4" Color="Color.Primary">@totalIssuesCount</MudText>
+                                    <MudText Typo="Typo.body2">Total Issues</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Primary" Size="Size.Large" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Controls -->
+            <MudGrid Class="mb-4">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Primary" 
+                                          StartIcon="@Icons.Material.Filled.Refresh"
+                                          OnClick="RefreshIssues"
+                                          Disabled="isLoading">
+                                    @if (isLoading)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                        <MudText Class="ms-2">Scanning...</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Refresh Issues</MudText>
+                                    }
+                                </MudButton>
+                                
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Info" 
+                                          StartIcon="@Icons.Material.Filled.History"
+                                          OnClick="ViewCorrectionHistory">
+                                    View History
+                                </MudButton>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardContent Class="pa-4">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect T="string" 
+                                              @bind-Value="selectedSeverity"
+                                              Variant="Variant.Outlined"
+                                              AnchorOrigin="Origin.BottomCenter"
+                                              @bind-Value:after="FilterIssues">
+                                        <MudSelectItem Value="@("")">All Severities</MudSelectItem>
+                                        <MudSelectItem Value="@("High")">High</MudSelectItem>
+                                        <MudSelectItem Value="@("Medium")">Medium</MudSelectItem>
+                                        <MudSelectItem Value="@("Low")">Low</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect T="string" 
+                                              @bind-Value="selectedIssueType" 
+                                              Variant="Variant.Outlined"
+                                              AnchorOrigin="Origin.BottomCenter"
+                                              @bind-Value:after="FilterIssues">
+                                        <MudSelectItem Value="@("")">All Types</MudSelectItem>
+                                        @foreach (var issueType in GetUniqueIssueTypes())
+                                        {
+                                            <MudSelectItem Value="@issueType">@issueType</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Issues Table -->
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" />
+                            <MudText Typo="Typo.h6">Active Data Validation Issues</MudText>
+                            @if (filteredIssues.Any())
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@filteredIssues.Count items</MudChip>
+                            }
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    @if (isLoading)
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudProgressCircular Indeterminate="true" />
+                            <MudText Typo="Typo.h6">Scanning for data validation issues...</MudText>
+                        </MudStack>
+                    }
+                    else if (!filteredIssues.Any())
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                            <MudText Typo="Typo.h6" Color="Color.Success">No Issues Found!</MudText>
+                            <MudText Typo="Typo.body2">All equipment data appears to be valid.</MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudDataGrid T="ValidationIssue" 
+                                    Items="@filteredIssues" 
+                                    Dense="true" 
+                                    Hover="true" 
+                                    Bordered="true" 
+                                    Striped="true"
+                                    SortMode="SortMode.Multiple"
+                                    Height="600px"
+                                    ColumnResizeMode="ResizeMode.Container">
+                            <Columns>
+                                <TemplateColumn Title="Severity" HeaderStyle="width: 80px;">
+                                    <CellTemplate>
+                                        <MudIcon Icon="@GetSeverityIcon(context.Item.Severity)"
+                                                Color="@GetSeverityColor(context.Item.Severity)"
+                                                Size="Size.Medium" />
+                                        <MudChip T="string" Color="@GetSeverityColor(context.Item.Severity)"
+                                                Size="Size.Small">
+                                            @context.Item.Severity
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                
+                                <PropertyColumn Property="x => x.IssueType" Title="Issue Type" />
+                                
+                                <PropertyColumn Property="x => x.InstNo" Title="Inst No" />
+                                
+                                <PropertyColumn Property="x => x.PCName" Title="PC Name">
+                                    <CellTemplate>
+                                        @(string.IsNullOrWhiteSpace(context.Item.PCName) ? "(No name)" : context.Item.PCName)
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                
+                                <PropertyColumn Property="x => x.FieldName" Title="Field" />
+                                
+                                <PropertyColumn Property="x => x.CurrentValue" Title="Current Value">
+                                    <CellTemplate>
+                                        <MudText Style="color: #f44336; font-family: monospace;" Typo="Typo.body2">
+                                            @(string.IsNullOrWhiteSpace(context.Item.CurrentValue) ? "(Empty)" : 
+                                              context.Item.CurrentValue.Length > 30 ? 
+                                              context.Item.CurrentValue.Substring(0, 30) + "..." : 
+                                              context.Item.CurrentValue)
+                                        </MudText>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                
+                                <PropertyColumn Property="x => x.SuggestedValue" Title="Suggested Fix">
+                                    <CellTemplate>
+                                        <MudText Style="color: #4caf50; font-family: monospace;" Typo="Typo.body2">
+                                            @(string.IsNullOrWhiteSpace(context.Item.SuggestedValue) ? "(Empty)" : 
+                                              context.Item.SuggestedValue.Length > 30 ? 
+                                              context.Item.SuggestedValue.Substring(0, 30) + "..." : 
+                                              context.Item.SuggestedValue)
+                                        </MudText>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                
+                                <PropertyColumn Property="x => x.Reason" Title="Reason">
+                                    <CellTemplate>
+                                        <MudTooltip Text="@context.Item.Reason">
+                                            <MudText Typo="Typo.body2">
+                                                @(context.Item.Reason.Length > 50 ? 
+                                                  context.Item.Reason.Substring(0, 50) + "..." : 
+                                                  context.Item.Reason)
+                                            </MudText>
+                                        </MudTooltip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                
+                                <TemplateColumn Title="Actions" HeaderStyle="width: 200px;">
+                                    <CellTemplate>
+                                        <MudStack Row Spacing="1">
+                                            @if (!context.Item.Reason.Contains("Equipment has passed service end date but is still"))
+                                            {
+                                                <MudTooltip Text="Fix this issue">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Build" 
+                                                                  Color="Color.Primary" 
+                                                                  Size="Size.Small"
+                                                                  OnClick="@(() => OpenCorrectionDialog(context.Item))" />
+                                                </MudTooltip>
+                                            }
+                                            
+                                            <MudTooltip Text="Ignore this issue">
+                                                <MudIconButton Icon="@Icons.Material.Filled.VisibilityOff" 
+                                                              Color="Color.Warning" 
+                                                              Size="Size.Small"
+                                                              OnClick="@(() => OpenIgnoreDialog(context.Item))" />
+                                            </MudTooltip>
+                                            
+                                            <MudTooltip Text="View equipment details">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Info" 
+                                                              Color="Color.Info" 
+                                                              Size="Size.Small"
+                                                              OnClick="@(() => ViewEquipmentDetails(context.Item))" />
+                                            </MudTooltip>
+                                        </MudStack>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                            
+                            <PagerContent>
+                                <MudDataGridPager T="ValidationIssue" />
+                            </PagerContent>
+                        </MudDataGrid>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Ignored Issues">
+            <!-- Ignored Issues Summary -->
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.h4" Color="Color.Secondary">@ignoredIssuesCount</MudText>
+                                    <MudText Typo="Typo.body2">Ignored Issues</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.VisibilityOff" Color="Color.Secondary" Size="Size.Large" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.Center">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Secondary" 
+                                          StartIcon="@Icons.Material.Filled.Refresh"
+                                          OnClick="RefreshIgnoredIssues">
+                                    Refresh Ignored Issues
+                                </MudButton>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Ignored Issues Table -->
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.VisibilityOff" />
+                            <MudText Typo="Typo.h6">Ignored Issues</MudText>
+                            @if (ignoredIssues.Any())
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@ignoredIssues.Count items</MudChip>
+                            }
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    @if (!ignoredIssues.Any())
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                            <MudText Typo="Typo.h6" Color="Color.Success">No Ignored Issues!</MudText>
+                            <MudText Typo="Typo.body2">There are currently no ignored validation issues.</MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudDataGrid T="IgnoredIssue" 
+                                    Items="@ignoredIssues" 
+                                    Dense="true" 
+                                    Hover="true" 
+                                    Bordered="true" 
+                                    Striped="true"
+                                    SortMode="SortMode.Multiple"
+                                    Height="600px"
+                                    ColumnResizeMode="ResizeMode.Container">
+                            <Columns>
+                                <PropertyColumn Property="x => x.IgnoredDate" Title="Ignored Date" Format="yyyy-MM-dd HH:mm" />
+                                <PropertyColumn Property="x => x.IssueType" Title="Issue Type" />
+                                <PropertyColumn Property="x => x.InstNo" Title="Inst No" />
+                                <PropertyColumn Property="x => x.PCName" Title="PC Name" />
+                                <PropertyColumn Property="x => x.FieldName" Title="Field" />
+                                <PropertyColumn Property="x => x.Severity" Title="Severity">
+                                    <CellTemplate>
+                                        <MudChip T="string" Color="@GetSeverityColor(context.Item.Severity)" Size="Size.Small">
+                                            @context.Item.Severity
+                                        </MudChip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <PropertyColumn Property="x => x.IgnoredBy" Title="Ignored By" />
+                                <PropertyColumn Property="x => x.IgnoreReason" Title="Ignore Reason">
+                                    <CellTemplate>
+                                        <MudTooltip Text="@context.Item.IgnoreReason">
+                                            <MudText Typo="Typo.body2">
+                                                @(context.Item.IgnoreReason.Length > 50 ? 
+                                                  context.Item.IgnoreReason.Substring(0, 50) + "..." : 
+                                                  context.Item.IgnoreReason)
+                                            </MudText>
+                                        </MudTooltip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                
+                                <TemplateColumn Title="Actions" HeaderStyle="width: 100px;">
+                                    <CellTemplate>
+                                        <MudTooltip Text="Unignore this issue">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                          Color="Color.Primary" 
+                                                          Size="Size.Small"
+                                                          OnClick="@(() => UnignoreIssue(context.Item))" />
+                                        </MudTooltip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                            
+                            <PagerContent>
+                                <MudDataGridPager T="IgnoredIssue" />
+                            </PagerContent>
+                        </MudDataGrid>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Solved Issues">
+            <!-- Solved Issues Summary -->
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.h4" Color="Color.Success">@solvedIssuesCount</MudText>
+                                    <MudText Typo="Typo.body2">Solved Issues</MudText>
+                                </MudStack>
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="4">
+                        <MudCardContent Class="pa-4">
+                            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.Center">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Success" 
+                                          StartIcon="@Icons.Material.Filled.Refresh"
+                                          OnClick="RefreshSolvedIssues">
+                                    Refresh Solved Issues
+                                </MudButton>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Solved Issues Table -->
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                            <MudText Typo="Typo.h6">Solved Issues</MudText>
+                            @if (solvedIssues.Any())
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success">@solvedIssues.Count items</MudChip>
+                            }
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    @if (!solvedIssues.Any())
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Info" Size="Size.Large" />
+                            <MudText Typo="Typo.h6" Color="Color.Info">No Solved Issues Yet!</MudText>
+                            <MudText Typo="Typo.body2">Start fixing issues to see them appear here.</MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudDataGrid T="SolvedIssue" 
+                                    Items="@solvedIssues" 
+                                    Dense="true" 
+                                    Hover="true" 
+                                    Bordered="true" 
+                                    Striped="true"
+                                    SortMode="SortMode.Multiple"
+                                    Height="600px"
+                                    ColumnResizeMode="ResizeMode.Container">
+                            <Columns>
+                                <PropertyColumn Property="x => x.SolvedDate" Title="Solved Date" Format="yyyy-MM-dd HH:mm" />
+                                <PropertyColumn Property="x => x.IssueType" Title="Issue Type" />
+                                <PropertyColumn Property="x => x.InstNo" Title="Inst No" />
+                                <PropertyColumn Property="x => x.PCName" Title="PC Name" />
+                                <PropertyColumn Property="x => x.FieldName" Title="Field" />
+                                <PropertyColumn Property="x => x.Severity" Title="Severity">
+                                    <CellTemplate>
+                                        <MudChip T="string" Color="@GetSeverityColor(context.Item.Severity)" Size="Size.Small">
+                                            @context.Item.Severity
+                                        </MudChip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <PropertyColumn Property="x => x.SolvedBy" Title="Solved By" />
+                                <PropertyColumn Property="x => x.SolutionMethod" Title="Solution Method">
+                                    <CellTemplate>
+                                        <MudChip T="string" Color="Color.Success" Size="Size.Small">
+                                            @context.Item.SolutionMethod
+                                        </MudChip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <PropertyColumn Property="x => x.SolutionNotes" Title="Solution Notes">
+                                    <CellTemplate>
+                                        <MudTooltip Text="@context.Item.SolutionNotes">
+                                            <MudText Typo="Typo.body2">
+                                                @(context.Item.SolutionNotes.Length > 50 ? 
+                                                  context.Item.SolutionNotes.Substring(0, 50) + "..." : 
+                                                  context.Item.SolutionNotes)
+                                            </MudText>
+                                        </MudTooltip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                            </Columns>
+                            
+                            <PagerContent>
+                                <MudDataGridPager T="SolvedIssue" />
+                            </PagerContent>
+                        </MudDataGrid>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+
+@code {
+    private List<ValidationIssue> allIssues = new();
+    private List<ValidationIssue> filteredIssues = new();
+    private List<IgnoredIssue> ignoredIssues = new();
+    private List<SolvedIssue> solvedIssues = new();
+    private bool isLoading = false;
+    private string selectedSeverity = "";
+    private string selectedIssueType = "";
+
+    private int highIssuesCount => allIssues.Count(i => i.Severity == "High");
+    private int mediumIssuesCount => allIssues.Count(i => i.Severity == "Medium");
+    private int lowIssuesCount => allIssues.Count(i => i.Severity == "Low");
+    private int totalIssuesCount => allIssues.Count;
+    private int ignoredIssuesCount => ignoredIssues.Count;
+    private int solvedIssuesCount => solvedIssues.Count;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshIssues();
+        RefreshIgnoredIssues();
+        RefreshSolvedIssues();
+    }
+
+    private async Task RefreshIssues()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(100); // Small delay to show loading state
+            allIssues = ValidationService.DetectValidationIssues();
+            FilterIssues();
+            
+            Snackbar.Add($"Found {allIssues.Count} data validation issues", 
+                        allIssues.Any() ? Severity.Warning : Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error scanning for issues: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FilterIssues()
+    {
+        filteredIssues = allIssues.Where(issue =>
+            (string.IsNullOrEmpty(selectedSeverity) || issue.Severity == selectedSeverity) &&
+            (string.IsNullOrEmpty(selectedIssueType) || issue.IssueType == selectedIssueType)
+        ).ToList();
+        
+        StateHasChanged();
+    }
+
+    private List<string> GetUniqueIssueTypes()
+    {
+        return allIssues.Select(i => i.IssueType).Distinct().OrderBy(x => x).ToList();
+    }
+
+    private void RefreshIgnoredIssues()
+    {
+        try
+        {
+            ignoredIssues = ValidationService.GetIgnoredIssues();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading ignored issues: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void RefreshSolvedIssues()
+    {
+        try
+        {
+            solvedIssues = ValidationService.GetSolvedIssues();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading solved issues: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenCorrectionDialog(ValidationIssue issue)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Issue"] = issue
+        };
+
+        var dialogOptions = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<DataCorrectionDialog>("Data Correction", parameters, dialogOptions);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            // Refresh all lists after a correction
+            await RefreshIssues();
+            RefreshIgnoredIssues();
+            RefreshSolvedIssues();
+        }
+    }
+
+    private async Task OpenIgnoreDialog(ValidationIssue issue)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Issue"] = issue
+        };
+
+        var dialogOptions = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<IgnoreIssueDialog>("Ignore Issue", parameters, dialogOptions);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is IgnoredIssue ignoredIssue)
+        {
+            try
+            {
+                ValidationService.IgnoreIssue(issue, ignoredIssue.IgnoredBy, ignoredIssue.IgnoreReason);
+
+                Snackbar.Add("Issue has been ignored successfully", Severity.Success);
+                
+                // Refresh both active and ignored issues
+                await RefreshIssues();
+                RefreshIgnoredIssues();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error ignoring issue: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task UnignoreIssue(IgnoredIssue ignoredIssue)
+    {
+        try
+        {
+            var confirmed = await DialogService.ShowMessageBox(
+                "Unignore Issue",
+                $"Are you sure you want to unignore this {ignoredIssue.IssueType} issue for {ignoredIssue.InstNo}?\n\nThis will make the issue visible again in the Active Issues tab.",
+                yesText: "Yes, Unignore",
+                cancelText: "Cancel");
+
+            if (confirmed == true)
+            {
+                ValidationService.UnignoreIssue(ignoredIssue.IgnoredIssueId);
+                Snackbar.Add("Issue has been unignored successfully", Severity.Success);
+                
+                // Refresh both active and ignored issues
+                await RefreshIssues();
+                RefreshIgnoredIssues();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error unignoring issue: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ViewEquipmentDetails(ValidationIssue issue)
+    {
+        if (issue.EquipmentData == null)
+        {
+            Snackbar.Add("Equipment data not available", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                ["Equipment"] = issue.EquipmentData
+            };
+
+            var dialogOptions = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.ExtraLarge,
+                FullWidth = true,
+                CloseOnEscapeKey = true
+            };
+
+            var dialog = await DialogService.ShowAsync<Dialog.DeviceDetailsDialog>(
+                $"Device Details - {issue.PCName}", 
+                parameters, 
+                dialogOptions);
+            
+            await dialog.Result;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening device details: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ViewCorrectionHistory()
+    {
+        try
+        {
+            var corrections = ValidationService.GetCorrectionHistory();
+            
+            if (!corrections.Any())
+            {
+                Snackbar.Add("No correction history found", Severity.Info);
+                return;
+            }
+
+            var historyText = string.Join("\n\n", corrections.Take(10).Select(c => 
+                $"Date: {c.CorrectionDate:yyyy-MM-dd HH:mm}\n" +
+                $"Equipment: {c.InstNo}\n" +
+                $"Field: {c.FieldName}\n" +
+                $"Change: {c.OldValue} → {c.NewValue}\n" +
+                $"By: {c.CorrectorInitials} (App Owner: {c.AppOwner})\n" +
+                $"Reason: {c.Reason}"));
+
+            await DialogService.ShowMessageBox(
+                "Recent Correction History",
+                $"Last {Math.Min(corrections.Count, 10)} corrections:\n\n{historyText}",
+                yesText: "OK");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading correction history: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string GetSeverityIcon(string severity)
+    {
+        return severity switch
+        {
+            "High" => Icons.Material.Filled.Error,
+            "Medium" => Icons.Material.Filled.Warning,
+            "Low" => Icons.Material.Filled.Info,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private Color GetSeverityColor(string severity)
+    {
+        return severity switch
+        {
+            "High" => Color.Error,
+            "Medium" => Color.Warning,
+            "Low" => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

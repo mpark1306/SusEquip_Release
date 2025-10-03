@@ -1,0 +1,262 @@
+﻿@page "/"
+@using SusEquip.Data.Services
+@using SusEquip.Data.Interfaces.Services
+@inject NavigationManager NavigationManager
+@inject IDashboardCacheService DashboardCache
+@inject IDataValidationService DataValidationService
+@inherits LayoutComponentBase
+
+<PageTitle>Index</PageTitle>
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12">
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudGrid Justify="Justify.Center" Class="align-items-center">
+                <MudItem xs="12">
+                    <MudPaper Class="pa-5 align-center justify-center" Elevation="3" Style="width: 100%; align-content: center;">
+                        <MudImage Src="Images/Green_RGB.png" Width="104" Style="display: block; margin-left: auto; margin-right: auto;" />
+                        <MudText Typo="Typo.h1" Align="Align.Center">SusEquip</MudText>
+                        <MudDivider DividerType="DividerType.Middle" Class="my-6" />
+                        <MudButtonGroup Class="align-center justify-center" Style="align-content: center;" Color="Color.Primary" Variant="Variant.Outlined">
+                            <MudButton StartIcon="@Icons.Material.Filled.LibraryBooks" IconColor="Color.Primary" OnClick="() => NavigationManager.NavigateTo(_link[0])">Device Library</MudButton>
+                            <MudButton StartIcon="@Icons.Material.Rounded.DesktopWindows" IconColor="Color.Primary" OnClick="() => NavigationManager.NavigateTo(_link[1])">New Machine</MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.HelpCenter" IconColor="Color.Primary" OnClick="() => NavigationManager.NavigateTo(_link[2])">Where-To-Go</MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Info" IconColor="Color.Primary" OnClick="() => NavigationManager.NavigateTo(_link[3])">Info Page</MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Update" IconColor="Color.Primary" OnClick="() => NavigationManager.NavigateTo(_link[4])">Update Log</MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Settings" IconColor="Color.Primary" OnClick="() => NavigationManager.NavigateTo(_link[5])">User Settings</MudButton>
+                        </MudButtonGroup>
+                    </MudPaper>
+                    <MudPaper Class="pa-4 mt-4" Style="text-align: center;">
+                        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Baseline" Class="mb-3">
+                            <MudText Typo="Typo.h6">Equipment Statistics</MudText>
+                            <MudStack Row AlignItems="AlignItems.Baseline" Spacing="2">
+                                @if (lastUpdated != DateTime.MinValue)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        Last updated: @lastUpdated.ToString("HH:mm:ss")
+                                    </MudText>
+                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                             Color="Color.Primary" 
+                                             Size="Size.Small"
+                                             Disabled="@isLoading"
+                                             OnClick="RefreshData"
+                                             Title="Refresh data" />
+                            </MudStack>
+                        </MudStack>
+                        
+                        @if (isLoading)
+                        {
+                            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Loading equipment data...</MudText>
+                        }
+                        
+                        <MudGrid Justify="Justify.Center" Spacing="3">
+                            <MudItem xs="3">
+                                <MudPaper Class="pa-4" Elevation="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                                    <MudText Typo="Typo.h6" Align="Align.Center">Active</MudText>
+                                    <MudText Typo="Typo.h4" Align="Align.Center">@(isLoading ? "-" : data[0].ToString())</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <MudPaper Class="pa-4" Elevation="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.NewReleases" Color="Color.Primary" Size="Size.Large" />
+                                    <MudText Typo="Typo.h6" Align="Align.Center">New</MudText>
+                                    <MudText Typo="Typo.h4" Align="Align.Center">@(isLoading ? "-" : data[1].ToString())</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <MudPaper Class="pa-4" Elevation="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Info" Size="Size.Large" />
+                                    <MudText Typo="Typo.h6" Align="Align.Center">Used</MudText>
+                                    <MudText Typo="Typo.h4" Align="Align.Center">@(isLoading ? "-" : data[2].ToString())</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <MudPaper Class="pa-4" Elevation="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                                    <MudText Typo="Typo.h6" Align="Align.Center">Quarantined</MudText>
+                                    <MudText Typo="Typo.h4" Align="Align.Center">@(isLoading ? "-" : data[3].ToString())</MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    <!-- Data Validation Summary Card -->
+                    <MudPaper Class="pa-4 mt-4" Style="text-align: center;">
+                        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Baseline" Class="mb-3">
+                            <MudText Typo="Typo.h6">Data Validation Status</MudText>
+                            <MudButton StartIcon="@Icons.Material.Filled.Rule" 
+                                     Color="Color.Primary" 
+                                     Size="Size.Small"
+                                     Variant="Variant.Text"
+                                     OnClick='() => NavigationManager.NavigateTo("/DataValidation")'
+                                     Title="View all validation issues">
+                                View Details
+                            </MudButton>
+                        </MudStack>
+                        
+                        @if (isLoading)
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Loading validation data...</MudText>
+                        }
+                        else
+                        {
+                            <MudGrid Justify="Justify.Center" Spacing="2">
+                                <MudItem xs="4">
+                                    <MudAlert Severity="@(validationSummary.HighCount > 0 ? Severity.Error : Severity.Success)" 
+                                            Variant="Variant.Filled" Class="pa-3">
+                                        <div style="text-align: center;">
+                                            <MudText Typo="Typo.h5">@validationSummary.HighCount</MudText>
+                                            <MudText Typo="Typo.body2">High Priority</MudText>
+                                            <MudText Typo="Typo.caption">MAC/UUID Issues</MudText>
+                                        </div>
+                                    </MudAlert>
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudAlert Severity="@(validationSummary.MediumCount > 0 ? Severity.Warning : Severity.Success)" 
+                                            Variant="Variant.Filled" Class="pa-3">
+                                        <div style="text-align: center;">
+                                            <MudText Typo="Typo.h5">@validationSummary.MediumCount</MudText>
+                                            <MudText Typo="Typo.body2">Medium Priority</MudText>
+                                            <MudText Typo="Typo.caption">Status/PC Name</MudText>
+                                        </div>
+                                    </MudAlert>
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudAlert Severity="@(validationSummary.LowCount > 0 ? Severity.Info : Severity.Success)" 
+                                            Variant="Variant.Filled" Class="pa-3">
+                                        <div style="text-align: center;">
+                                            <MudText Typo="Typo.h5">@validationSummary.LowCount</MudText>
+                                            <MudText Typo="Typo.body2">Low Priority</MudText>
+                                            <MudText Typo="Typo.caption">App Owner</MudText>
+                                        </div>
+                                    </MudAlert>
+                                </MudItem>
+                            </MudGrid>
+                            
+                            @if (validationSummary.TotalCount > 0)
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                                    @validationSummary.TotalCount total issues found - Click "View Details" to resolve
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Success" Class="mt-2">
+                                    ✓ All equipment data validated successfully
+                                </MudText>
+                            }
+                        }
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </MudItem>
+</MudGrid>
+
+@code {
+    public double[] data = new double[4];
+    public string[] labels = { "Active", "New", "Used", "Quarantined" };
+    private string[] _link = { "/DeviceLibrary", "/AddNew", "/WhereToGo", "/Info", "/UpdateLog", "/UserSettings" };
+    private bool isLoading = true;
+    private DateTime lastUpdated = DateTime.MinValue;
+    private ValidationSummary validationSummary = new();
+
+    public class ValidationSummary
+    {
+        public int HighCount { get; set; }
+        public int MediumCount { get; set; }
+        public int LowCount { get; set; }
+        public int TotalCount => HighCount + MediumCount + LowCount;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            // Use the cached dashboard service - this will either return cached data 
+            // or fetch fresh data if cache is expired/empty
+            var stats = await DashboardCache.GetDashboardStatsAsync();
+            
+            data[0] = stats.ActiveCount;
+            data[1] = stats.NewCount;
+            data[2] = stats.UsedCount;
+            data[3] = stats.QuarantinedCount;
+            lastUpdated = stats.LastUpdated;
+
+            // Load validation summary
+            await LoadValidationSummary();
+        }
+        catch (Exception)
+        {
+            // Log error or handle appropriately
+            // Set default values
+            data[0] = data[1] = data[2] = data[3] = 0;
+            validationSummary = new ValidationSummary();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Force refresh the data from database
+            var stats = await DashboardCache.RefreshDashboardStatsAsync();
+            
+            data[0] = stats.ActiveCount;
+            data[1] = stats.NewCount;
+            data[2] = stats.UsedCount;
+            data[3] = stats.QuarantinedCount;
+            lastUpdated = stats.LastUpdated;
+
+            // Refresh validation summary
+            await LoadValidationSummary();
+        }
+        catch (Exception)
+        {
+            // Error refreshing dashboard data
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadValidationSummary()
+    {
+        try
+        {
+            var issues = DataValidationService.DetectValidationIssues();
+            
+            validationSummary = new ValidationSummary
+            {
+                HighCount = issues.Count(i => i.Severity == "High"),
+                MediumCount = issues.Count(i => i.Severity == "Medium"),
+                LowCount = issues.Count(i => i.Severity == "Low")
+            };
+        }
+        catch (Exception)
+        {
+            // Error loading validation data
+            validationSummary = new ValidationSummary();
+        }
+    }
+}
+
+<!-- Rolling Announcement Bar -->
+<div class="announcement-bar">
+    <div class="announcement-content">
+        🎯 Hvem har Equip'en åben?? 🎯
+    </div>
+</div>

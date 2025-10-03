@@ -1,0 +1,482 @@
+﻿@using SusEquip.Data
+@using SusEquip.Data.Models
+@using SusEquip.Data.Utilities
+@using SusEquip.Data.Interfaces.Services
+@inject SusEquip.Data.Services.EquipmentService _Equipment
+@inject IDataValidationService _ValidationService
+@inject IDialogService Dialog
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-0">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Align="Align.Center">
+                        Edit Equipment
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        Add entry to: @EquipmentData.Inst_No
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Main Form Card -->
+            <MudCard Elevation="4" Style="border-radius: 12px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6">Equipment Information</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-6">
+                    <MudForm Model="@EquipmentData" @ref="@form">
+                        <MudStack Spacing="4">
+                            <!-- Inst_No -->
+                            <MudNumericField T="int" 
+                                           Label="Inst No"
+                                           @bind-Value="EquipmentData.Inst_No"
+                                           Variant="Variant.Outlined"
+                                           Immediate="true"
+                                           Adornment="Adornment.Start"
+                                           AdornmentIcon="@Icons.Material.Filled.Tag" />
+
+                            <!-- PC Name -->
+                            <MudTextField Label="PC Name" 
+                                        Value="@EquipmentData.PC_Name" 
+                                        For="@(() => EquipmentData.PC_Name)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        ValueChanged="@((string value) => OnPcNameChanged(value))"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.Computer" />
+
+                            <!-- Creator -->
+                            <MudTextField Label="Creator" 
+                                        @bind-Value="EquipmentData.Creator_Initials" 
+                                        For="@(() => EquipmentData.Creator_Initials)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                            <!-- Owner -->
+                            <MudTextField Label="App Owner" 
+                                        @bind-Value="EquipmentData.App_Owner" 
+                                        For="@(() => EquipmentData.App_Owner)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.AccountCircle" />
+
+                            <!-- Machine Type - now editable with automatic determination -->
+                            <MudSelect T="string"
+                                     Label="Machine Type" 
+                                     @bind-Value="EquipmentData.MachineType"
+                                     Variant="Variant.Outlined"
+                                     Immediate="true"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Settings"
+                                     HelperText="@GetMachineTypeHelperText()"
+                                     HelperTextColor="@GetMachineTypeHelperColor()">
+                                <MudSelectItem Value="@("Employee Laptop")" />
+                                <MudSelectItem Value="@("Employee Desktop")" />
+                                <MudSelectItem Value="@("Employee Linux")" />
+                                <MudSelectItem Value="@("Employee Mac(Apple)")" />
+                                <MudSelectItem Value="@("Student")" />
+                                <MudSelectItem Value="@("LAB")" />
+                                <MudSelectItem Value="@("General")" />
+                                <MudSelectItem Value="@("Waiting for PC Name")" />
+                                <MudSelectItem Value="@("Error")" />
+                            </MudSelect>
+
+                            <!-- Status -->
+                            <MudSelect T="string"
+                                     Label="Status"
+                                     Value="@EquipmentData.Status"
+                                     For="@(() => EquipmentData.Status)"
+                                     Variant="Variant.Outlined"
+                                     AnchorOrigin="Origin.BottomCenter"
+                                     ValueChanged="@(async (string newValue) => await OnStatusChanged(newValue))"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.CheckCircle">
+                                <MudSelectItem Value="@("Modtaget (Ny)")" />
+                                <MudSelectItem Value="@("Hos Bruger")" />
+                                <MudSelectItem Value="@("Kasseret")" />
+                                <MudSelectItem Value="@("Stjålet")" />
+                                <MudSelectItem Value="@("På Lager (Brugt)")" />
+                                <MudSelectItem Value="@("I bur/kasse")" />
+                                <MudSelectItem Value="@("Karantæne")" />
+                                <MudSelectItem Value="@("Afhentet af Refurb")" />
+                            </MudSelect>
+
+                            <!-- Divider for Technical Details -->
+                            <MudDivider />
+                            <MudText Typo="Typo.h6">
+                                <MudIcon Icon="@Icons.Material.Filled.Memory" Class="mr-2" />
+                                Technical Specifications
+                            </MudText>
+
+                            <!-- Serial Number -->
+                            <MudTextField Label="Serial Number" 
+                                        @bind-Value="EquipmentData.Serial_No" 
+                                        For="@(() => EquipmentData.Serial_No)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.QrCode" />
+
+                            <!-- MAC Addresses -->
+                            <MudTextField Label="MAC Address 1" 
+                                        @bind-Value="EquipmentData.Mac_Address1" 
+                                        For="@(() => EquipmentData.Mac_Address1)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.NetworkWifi" />
+
+                            <MudTextField Label="MAC Address 2" 
+                                        @bind-Value="EquipmentData.Mac_Address2" 
+                                        For="@(() => EquipmentData.Mac_Address2)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.Wifi" />
+
+                            <!-- UUID -->
+                            <MudTextField Label="UUID" 
+                                        @bind-Value="EquipmentData.UUID" 
+                                        For="@(() => EquipmentData.UUID)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.Fingerprint" />
+
+                            <!-- Department -->
+                            <MudSelect T="string" 
+                                     Label="Department" 
+                                     @bind-Value="EquipmentData.Department" 
+                                     For="@(() => EquipmentData.Department)" 
+                                     Variant="Variant.Outlined"
+                                     AnchorOrigin="Origin.BottomCenter"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Business">
+                                <MudSelectItem Value="@("N/A")" />
+                                <MudSelectItem Value="@("SUS")" />
+                                <MudSelectItem Value="@("CME")" />
+                                <MudSelectItem Value="@("ENV")" />
+                                <MudSelectItem Value="@("SPACE")" />
+                                <MudSelectItem Value="@("BYG")" />
+                            </MudSelect>
+
+                            <!-- Divider for Service Information -->
+                            <MudDivider />
+                            <MudText Typo="Typo.h6">
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
+                                Service Period
+                            </MudText>
+
+                            <!-- Service Dates -->
+                            <MudTextField Label="Service Start (yyyy-mm-dd)" 
+                                        @bind-Value="EquipmentData.Service_Start" 
+                                        For="@(() => EquipmentData.Service_Start)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.PlayArrow" />
+
+                            <MudTextField Label="Service End (yyyy-mm-dd)" 
+                                        @bind-Value="EquipmentData.Service_Ends" 
+                                        For="@(() => EquipmentData.Service_Ends)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.Stop" />
+
+                            <!-- Notes -->
+                            <MudTextField Label="Notes" 
+                                        @bind-Value="EquipmentData.Note" 
+                                        For="@(() => EquipmentData.Note)" 
+                                        Variant="Variant.Outlined"
+                                        Immediate="true"
+                                        Lines="3"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.Notes" />
+                        </MudStack>
+                    </MudForm>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudStack Row Justify="Justify.FlexEnd" Spacing="3">
+                <MudButton OnClick="Close" 
+                         Color="Color.Default" 
+                         Variant="Variant.Text"
+                         StartIcon="@Icons.Material.Filled.Close">
+                    Cancel
+                </MudButton>
+                <MudButton OnClick="OnButtonClicked" 
+                         Color="Color.Primary" 
+                         Variant="Variant.Filled"
+                         StartIcon="@Icons.Material.Filled.Save">
+                    Apply Changes
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired] public string ContentText { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public EquipmentData EquipmentData { get; set; } = default!;
+    [Parameter, EditorRequired] public List<EquipmentData> EquipmentList { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    private MudForm form = default!;
+    private string today = string.Empty;
+    private bool _check = false;
+    private string originalStatus = string.Empty;
+
+    // Store original values for fields that require confirmation
+    private int originalInstNo;
+    private string originalSerialNo = string.Empty;
+    private string originalMac1 = string.Empty;
+    private string originalMac2 = string.Empty;
+    private string originalUUID = string.Empty;
+
+    public int SelectedOption { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        today = EquipmentUtils.CurrentDayDisplay();
+        originalStatus = EquipmentData.Status;
+        originalInstNo = EquipmentData.Inst_No;
+        originalSerialNo = EquipmentData.Serial_No;
+        originalMac1 = EquipmentData.Mac_Address1;
+        originalMac2 = EquipmentData.Mac_Address2;
+        originalUUID = EquipmentData.UUID;
+
+        // Set initial machine type based on PC_Name and Status
+        UpdateMachineType();
+
+        await LoadUsername();
+
+        base.OnInitialized();
+        _Equipment.GetEquipSortedByEntry(EquipmentData.Inst_No);
+    }
+
+
+    void Close() => MudDialog.Close(DialogResult.Ok(true));
+    void ApplyChanges() => MudDialog.Close(DialogResult.Ok(true));
+
+    private async Task OnButtonClicked()
+    {
+        try
+        {
+            ControlIfNull();
+            if (!_check)
+            {
+                bool isValid = EquipmentUtils.ValidateEquipmentData(EquipmentData);
+                if (!isValid)
+                {
+                    await DialogService.ShowMessageBox(
+                        "Warning",
+                        "There are required fields not filled correctly. Please check your entry.",
+                        yesText: "Understood");
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            // Check for changes in fields that require confirmation.
+            if (!await ConfirmFieldChanges())
+            {
+                // User canceled the confirmation.
+                return;
+            }
+
+            // Validate for potential data validation issues
+            var validationIssues = _ValidationService.ValidateEquipmentBeforeSaving(EquipmentData);
+            
+            if (validationIssues.Any())
+            {
+                var issuesSummary = _ValidationService.GetIssuesSummary(validationIssues);
+                var warningMessage = $"The following potential issues were detected:\n\n{issuesSummary}\n\nDo you want to proceed anyway?";
+                
+                bool? confirmed = await DialogService.ShowMessageBox(
+                    "Validation Issues Detected", 
+                    warningMessage, 
+                    yesText: "Proceed Anyway", 
+                    cancelText: "Cancel");
+                
+                if (confirmed != true)
+                {
+                    return;
+                }
+            }
+
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Changes are permanent for this entry.",
+                yesText: "Understood", cancelText: "Cancel");
+
+            if (result == true)
+            {
+                EquipmentData.App_Owner ??= "";
+                EquipmentData.Note ??= "";
+                EquipmentData.Mac_Address2 ??= "";
+                EquipmentData.Entry_Date = today;
+                _Equipment.InsertEntry(EquipmentData);
+                MudDialog.Close(DialogResult.Ok(true));
+                StateHasChanged();
+            }
+        }
+        catch (Exception)
+        {
+            NavigationManager.NavigateTo("/Error");
+        }
+    }
+
+    private bool ControlIfNull()
+    {
+        if (EquipmentData.Creator_Initials == null || EquipmentData.Status == null ||
+            EquipmentData.Mac_Address1 == null || EquipmentData.UUID == null || EquipmentData.Product_No == null ||
+            EquipmentData.Creator_Initials.Trim() == "" || EquipmentData.Status.Trim() == "" ||
+            EquipmentData.Mac_Address1.Trim() == "" || EquipmentData.UUID.Trim() == "" || EquipmentData.Product_No.Trim() == "")
+        {
+            _check = false;
+        }
+        else
+        {
+            _check = true;
+        }
+        return _check;
+    }
+
+    // Status field confirmation logic remains unchanged.
+    private async Task OnStatusChanged(string newStatus)
+    {
+        if (originalStatus == "Hos Bruger" && newStatus != originalStatus)
+        {
+            if (!(newStatus == "Stjålet" ||
+                  newStatus == "Kasseret" ||
+                  newStatus == "Karantæne" ||
+                  newStatus == "På Lager (Ny)" ||
+                  newStatus == "På Lager (Brugt)"))
+            {
+                await DialogService.ShowMessageBox(
+                    "Status Change Not Allowed",
+                    "When changing status from 'Hos Bruger', you can only change it to 'Stjålet', 'Kasseret', 'Karantæne', 'På Lager (Ny)', or 'På Lager (Brugt)'.",
+                    yesText: "Understood");
+
+                EquipmentData.Status = originalStatus;
+                StateHasChanged();
+                return;
+            }
+        }
+        EquipmentData.Status = newStatus;
+        
+        // Update machine type when status changes
+        UpdateMachineType();
+        
+        StateHasChanged();
+    }
+
+    // This method checks if any of the fields (except Status) have changed.
+    // If so, it shows one combined confirmation dialog.
+    private async Task<bool> ConfirmFieldChanges()
+    {
+        var changes = new List<string>();
+
+        if (EquipmentData.Inst_No != originalInstNo)
+            changes.Add($"Inst No: {originalInstNo} -> {EquipmentData.Inst_No}");
+        if (EquipmentData.Serial_No != originalSerialNo)
+            changes.Add($"Serial Number: {originalSerialNo} -> {EquipmentData.Serial_No}");
+        if (EquipmentData.Mac_Address1 != originalMac1)
+            changes.Add($"MAC Address 1: {originalMac1} -> {EquipmentData.Mac_Address1}");
+        if (EquipmentData.Mac_Address2 != originalMac2)
+            changes.Add($"MAC Address 2: {originalMac2} -> {EquipmentData.Mac_Address2}");
+        if (EquipmentData.UUID != originalUUID)
+            changes.Add($"UUID: {originalUUID} -> {EquipmentData.UUID}");
+
+        if (changes.Any())
+        {
+            string message = "You have changed the following fields:\n" +
+                             string.Join("\n", changes) +
+                             "\n\nDo you want to proceed with these changes?";
+
+            bool? confirmed = await DialogService.ShowMessageBox("Confirm Field Changes", message, yesText: "Yes", cancelText: "No");
+            return confirmed == true;
+        }
+        return true;
+    }
+    private async Task LoadUsername()
+    {
+        var username = await JSRuntime.InvokeAsync<string>("cookieHelper.getCookie", "Creator_Initials");
+        if (!string.IsNullOrEmpty(username))
+        {
+            EquipmentData.Creator_Initials = username;
+        }
+    }
+
+    /// <summary>
+    /// Handles PC Name changes and automatically updates Machine Type
+    /// </summary>
+    /// <param name="newPcName">The new PC name value</param>
+    private void OnPcNameChanged(string newPcName)
+    {
+        EquipmentData.PC_Name = newPcName;
+        UpdateMachineType();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Updates the Machine Type based on current PC_Name and Status
+    /// </summary>
+    private void UpdateMachineType()
+    {
+        EquipmentData.MachineType = EquipmentUtils.DetermineMachineType(EquipmentData.PC_Name, EquipmentData.Status);
+    }
+
+    /// <summary>
+    /// Gets the helper text for the Machine Type field
+    /// </summary>
+    /// <returns>Helper text based on current machine type</returns>
+    private string GetMachineTypeHelperText()
+    {
+        if (EquipmentData.MachineType == "Error")
+        {
+            return "Unique name outside naming convention. Please change manually";
+        }
+        if (EquipmentData.MachineType == "Waiting for PC Name")
+        {
+            return "Enter a PC Name to automatically determine machine type";
+        }
+        return "Automatically determined from PC Name";
+    }
+
+    /// <summary>
+    /// Gets the helper text color for the Machine Type field
+    /// </summary>
+    /// <returns>Color based on current machine type</returns>
+    private Color GetMachineTypeHelperColor()
+    {
+        if (EquipmentData.MachineType == "Error")
+        {
+            return Color.Error;
+        }
+        if (EquipmentData.MachineType == "Waiting for PC Name")
+        {
+            return Color.Warning;
+        }
+        return Color.Default;
+    }
+
+}

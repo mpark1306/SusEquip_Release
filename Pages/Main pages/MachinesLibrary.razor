@@ -1,0 +1,2321 @@
+@page "/DeviceLibrary"
+@using System.Net.Http.Json
+@using System.Linq
+@using MudBlazor
+@using MudBlazor.Extensions
+@using MudBlazor.Services
+@using SusEquip.Data
+@using SusEquip.Pages.Dialog
+@using SusEquip.Shared
+@using MudBlazor.Interfaces
+@using SusEquip.Data.Models
+@using SusEquip.Data.Services
+@using SusEquip.Data.Utilities
+@using SusEquip.Data.Interfaces.Services
+@inject SusEquip.Data.DatabaseHelper DatabaseHelper
+@inject SusEquip.Data.Services.EquipmentService EquipmentService
+@inject SusEquip.Data.Services.OLDEquipmentService OLDEquipmentService
+@inject IDataValidationService ValidationService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+    <MudContainer Class="pa-4">
+    <MudPaper Style="width: 130%; margin-left: -15%;">
+        <MudTabs Elevation="4" Rounded="true" Centered="true" Outlined="true" Color="@Color.Primary">
+        <MudTabPanel Text="Devices">
+            <MudContainer Class="pa-6">
+                <MudGrid Spacing="5" Justify="Justify.Center">
+                <MudItem xs="12" md="12" Class="p-4 mt-6">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Justify="Justify.Center">
+                        <!-- Refresh Button -->
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
+                                   OnClick="OpenOutputLoading">
+                           Export Equip
+                        </MudButton>
+
+                        <!-- Export to Excel Button -->
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FileDownload"
+                                   OnClick="ExportDTUPCLogToExcel">
+                            Export DTUPC-Log
+                        </MudButton>
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+                    @if (showAdvancedSearch)
+                    {
+                        <MudCard Class="mb-4">
+                            <MudCardContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Class="mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.FilterList" />
+                                    <MudText Typo="Typo.h6">Advanced Search</MudText>
+                                </MudStack>
+                                <MudGrid>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.InstNo" Label="Inst No" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.PCName" Label="PC Name" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.Department" Label="Department" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.AppOwner" Label="App Owner" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudSelect @bind-Value="advancedFilters.Status" Label="Status" Variant="Variant.Outlined" Clearable="true">
+                                            <MudSelectItem Value="@("Modtaget (Ny)")">Modtaget (Ny)</MudSelectItem>
+                                            <MudSelectItem Value="@("Hos Bruger")">Hos Bruger</MudSelectItem>
+                                            <MudSelectItem Value="@("Kasseret")">Kasseret</MudSelectItem>
+                                            <MudSelectItem Value="@("Stjålet")">Stjålet</MudSelectItem>
+                                            <MudSelectItem Value="@("På Lager (Brugt)")">På Lager (Brugt)</MudSelectItem>
+                                            <MudSelectItem Value="@("I bur/kasse")">I bur/kasse</MudSelectItem>
+                                            <MudSelectItem Value="@("Karantæne")">Karantæne</MudSelectItem>
+                                            <MudSelectItem Value="@("Afhentet af Refurb")">Afhentet af Refurb</MudSelectItem>
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.SerialNo" Label="Serial No" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.MachineType" Label="Machine Type" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudDatePicker @bind-Date="advancedFilters.ServiceEndsFrom" Label="Service Ends From" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <MudStack Row Justify="Justify.FlexEnd" Spacing="2">
+                                            <MudButton Variant="Variant.Outlined" 
+                                                      Color="Color.Secondary" 
+                                                      OnClick="ClearAdvancedFilters">
+                                                Clear Filters
+                                            </MudButton>
+                                            <MudButton Variant="Variant.Filled" 
+                                                      Color="Color.Primary" 
+                                                      OnClick="ApplyAdvancedFilters">
+                                                Apply Filters
+                                            </MudButton>
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+                    <!-- The DataGrid now binds to machines -->
+                    <MudDataGrid T="MachineData" Style="width: 130%; margin-left: -15%;" ColumnResizeMode="ResizeMode.Container" SortMode="SortMode.Multiple" ShowMenuIcon="true" Hideable="true" Items="@machines" Dense="true" Hover="true" Bordered="true" Striped="true" QuickFilter="@FilterFunc" Height="600px">
+                        <ToolBarContent>
+                            <MudText Typo="Typo.h6">All Devices</MudText>
+                            <MudSpacer />
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                                <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                          Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          Size="Size.Small"
+                                          OnClick="ToggleAdvancedSearch">
+                                    Advanced
+                                </MudButton>
+                            </MudStack>
+                        </ToolBarContent>
+                        <Columns>
+                            <HierarchyColumn T="MachineData"></HierarchyColumn>
+                            <TemplateColumn InitialDirection="SortDirection.Descending" HeaderStyle="width: 100px; max-width: 100px;" Title="Inst No" SortBy="@(x => x.Inst_No)" Sortable="true">
+                                <CellTemplate>
+                                    <MudText>@FormatInstNo(context.Item.Inst_No)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <!-- PC Name with validation indicator -->
+                            <TemplateColumn HeaderStyle="min-width: 120px; max-width: 120px;" Title="PC Name" SortBy="@(x => x.PC_Name)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "PC_Name"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.PC_Name</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <PropertyColumn HeaderStyle="width: 120px; max-width: 120px;" Property="x => x.Department" />
+                            
+                            <!-- App Owner with validation indicator -->
+                            <TemplateColumn HeaderStyle="width: 120px; max-width: 120px;" Title="App Owner" SortBy="@(x => x.App_Owner)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "App_Owner"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.App_Owner</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <PropertyColumn HeaderStyle="min-width: 120px; max-width: 120px;" Property="x => x.Serial_No"/>
+                            
+                            <!-- Status with validation indicator -->
+                            <TemplateColumn HeaderStyle="width: 120px; max-width: 120px;" Title="Status" SortBy="@(x => x.Status)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "Status"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.Status</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <!-- MAC Address with validation indicator -->
+                            <TemplateColumn HeaderStyle="min-width: 120px; max-width: 120px;" Title="MAC Address" SortBy="@(x => x.Mac_Address1)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "Mac_Address1"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.Mac_Address1</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <!-- Service Ends with validation indicator -->
+                            <TemplateColumn HeaderStyle="width: 120px; max-width: 120px;" Title="Service Ends" SortBy="@(x => x.Service_Ends)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "Service_Ends"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.Service_Ends</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <PropertyColumn HeaderStyle="min-width: 120px; max-width: 120px;" Property="x => x.MachineType" />
+                            <TemplateColumn HeaderStyle="min-width: 150px; max-width: 150px;" Title="Actions">
+                                <CellTemplate>
+                                    <MudTooltip Text="History" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                        <MudIconButton Icon="@Icons.Material.Rounded.History" Color="Color.Success" Size="Size.Small" OnClick="@(() => HandleHistoryClick(context.Item))" Variant="Variant.Filled">Machine History</MudIconButton>
+                                    </MudTooltip>
+                                    <MudTooltip Text="Add Entry" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                        <MudIconButton Icon="@Icons.Material.Rounded.PlaylistAddCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogEdit(context.Item))" Variant="Variant.Filled">Add Entry</MudIconButton>
+                                    </MudTooltip>
+                                    <MudTooltip Text="Documentation" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                        <MudIconButton Icon="@Icons.Material.Rounded.DocumentScanner"
+                                                       Color="Color.Success"
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => CopyDocumentationData(context.Item))"
+                                                       Variant="Variant.Filled">    
+                                            Documentation
+                                        </MudIconButton>
+                                    </MudTooltip>
+                                    <MudTooltip Text="Add to DTUPC" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                        <MudIconButton Icon="@Icons.Material.Filled.DomainAdd"
+                                                       Color="Color.Info"
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => OpenDialogAddToDTUPC(context.Item))"
+                                                       Variant="Variant.Filled">
+                                            Add to DTUPC
+                                        </MudIconButton>
+                                    </MudTooltip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                        <ChildRowContent>
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">Full info for @context.Item.PC_Name</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudGrid>
+                                        <MudItem xs="6">
+                                            <MudList>
+                                                <MudListItem Text="@($"Entry ID: {context.Item.EntryId}")" OnClick="@(() => CopyTextToClipboard(context.Item.EntryId.ToString()))" />
+                                                <MudListItem Text="@($"Entry Date: {context.Item.Entry_Date}")" OnClick="@(() => CopyTextToClipboard(context.Item.Entry_Date.ToString()))" />
+                                                <MudListItem Text="@($"PC Name: {context.Item.PC_Name}")" OnClick="@(() => CopyTextToClipboard(context.Item.PC_Name))" />
+                                                <MudListItem Text="@($"Inst No: {FormatInstNo(context.Item.Inst_No)}")" OnClick="@(() => CopyInstNoToClipboard(context.Item.Inst_No))" />
+                                                <MudListItem Text="@($"Creator Initials: {context.Item.Creator_Initials}")" OnClick="@(() => CopyTextToClipboard(context.Item.Creator_Initials))" />
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.App_Owner))">
+                                                    <MudListItemText>App Owner: @context.Item.App_Owner</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                                    <MudListItemText>Machine Type: @context.Item.MachineType</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Start.ToString()))">
+                                                    <MudListItemText>Service Start: @context.Item.Service_Start</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Ends.ToString()))">
+                                                    <MudListItemText>Service Ends: @context.Item.Service_Ends</MudListItemText>
+                                                </MudListItem>
+                                            </MudList>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudList>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Status))">
+                                                    <MudListItemText>Status: @context.Item.Status</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Serial_No))">
+                                                    <MudListItemText>Serial No: @context.Item.Serial_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address1))">
+                                                    <MudListItemText>Mac Address 1: @context.Item.Mac_Address1</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address2))">
+                                                    <MudListItemText>Mac Address 2: @context.Item.Mac_Address2</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.UUID))">
+                                                    <MudListItemText>UUID: @context.Item.UUID</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Product_No))">
+                                                    <MudListItemText>Product No: @context.Item.Product_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Model_Name_and_No))">
+                                                    <MudListItemText>Model Name and No: @context.Item.Model_Name_and_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Department))">
+                                                    <MudListItemText>Department: @context.Item.Department</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Note))">
+                                                    <MudListItemText>Note: @context.Item.Note</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                                    <MudListItemText>MachineType: @context.Item.MachineType</MudListItemText>
+                                                </MudListItem>
+                                            </MudList>
+                                        </MudItem>
+                                    </MudGrid>
+                                    <!-- Print Button -->
+                                    @* <MudCardActions>
+                                        <MudButton Variant="Variant.Filled" 
+                                                 Color="Color.Primary" 
+                                                 StartIcon="@Icons.Material.Filled.Print"
+                                                 OnClick="@(() => OpenPrintDialog(context.Item))">
+                                            Print Labels
+                                        </MudButton>
+                                    </MudCardActions> *@
+                                </MudCardContent>
+                            </MudCard>
+                        </ChildRowContent>
+                        <PagerContent>
+                            <MudDataGridPager/>
+                        </PagerContent>
+                    </MudDataGrid>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </MudTabPanel>
+    <MudTabPanel Text="All entries">
+        <MudContainer Class="pa-6">
+            <MudGrid Spacing="2" Justify="Justify.Center">
+                <MudItem xs="12">
+                    @if (showAdvancedSearch)
+                    {
+                        <MudCard Class="mb-4">
+                            <MudCardContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Class="mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.FilterList" />
+                                    <MudText Typo="Typo.h6">Advanced Search</MudText>
+                                </MudStack>
+                                <MudGrid>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.EntryId" Label="Entry ID" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.InstNo" Label="Inst No" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.PCName" Label="PC Name" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.AppOwner" Label="App Owner" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.CreatorInitials" Label="Creator" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudSelect @bind-Value="advancedFilters.Status" Label="Status" Variant="Variant.Outlined" Clearable="true">
+                                            <MudSelectItem Value="@("Modtaget (Ny)")">Modtaget (Ny)</MudSelectItem>
+                                            <MudSelectItem Value="@("Hos Bruger")">Hos Bruger</MudSelectItem>
+                                            <MudSelectItem Value="@("Kasseret")">Kasseret</MudSelectItem>
+                                            <MudSelectItem Value="@("Stjålet")">Stjålet</MudSelectItem>
+                                            <MudSelectItem Value="@("På Lager (Brugt)")">På Lager (Brugt)</MudSelectItem>
+                                            <MudSelectItem Value="@("I bur/kasse")">I bur/kasse</MudSelectItem>
+                                            <MudSelectItem Value="@("Karantæne")">Karantæne</MudSelectItem>
+                                            <MudSelectItem Value="@("Afhentet af Refurb")">Afhentet af Refurb</MudSelectItem>
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.SerialNo" Label="Serial No" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField @bind-Value="advancedFilters.MachineType" Label="Machine Type" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <MudStack Row Justify="Justify.FlexEnd" Spacing="2">
+                                            <MudButton Variant="Variant.Outlined" 
+                                                      Color="Color.Secondary" 
+                                                      OnClick="ClearAdvancedFilters">
+                                                Clear Filters
+                                            </MudButton>
+                                            <MudButton Variant="Variant.Filled" 
+                                                      Color="Color.Primary" 
+                                                      OnClick="ApplyAdvancedFilters">
+                                                Apply Filters
+                                            </MudButton>
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+                    <MudDataGrid T="EquipmentData" Style="width: 130%; margin-left: -15%;" Items="@equipment" Dense="true" Hover="true" Bordered="true" Striped="true" SortMode="SortMode.Multiple" QuickFilter="@FilterFunc" ColumnResizeMode="ResizeMode.Container" Height="600px">
+                        <ToolBarContent>
+                            <MudText Typo="Typo.h6">All Entries</MudText>
+                            <MudSpacer />
+                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                <MudTextField @bind-Value="@searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                                <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                          Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          Size="Size.Small"
+                                          OnClick="ToggleAdvancedSearch">
+                                    Advanced
+                                </MudButton>
+                            </MudStack>
+                        </ToolBarContent>
+                        <Columns>
+                            <HierarchyColumn T="EquipmentData"></HierarchyColumn>
+                            <PropertyColumn HeaderStyle="width: 70px; max-width: 70px;" Property="x => x.EntryId" Title="Entry ID"/>
+                            <PropertyColumn HeaderStyle="width: 80px; max-width: 80px;" Property="x => x.Inst_No" Title="Inst No"/>
+                            
+                            <!-- PC Name with validation indicator -->
+                            <TemplateColumn HeaderStyle="min-width: 150px;" Title="PC Name" SortBy="@(x => x.PC_Name)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "PC_Name"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.PC_Name</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <!-- App Owner with validation indicator -->
+                            <TemplateColumn HeaderStyle="width: 100px; max-width: 100px;" Title="App Owner" SortBy="@(x => x.App_Owner)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "App_Owner"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.App_Owner</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <PropertyColumn HeaderStyle="width: 80px; max-width: 80px;" Property="x => x.Creator_Initials" Title="Creator"/>
+                            <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Serial_No" Title="Serial No"/>
+                            
+                            <!-- Status with validation indicator -->
+                            <TemplateColumn HeaderStyle="width: 90px; max-width: 90px;" Title="Status" SortBy="@(x => x.Status)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "Status"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.Status</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <!-- MAC Address with validation indicator -->
+                            <TemplateColumn HeaderStyle="min-width: 150px;" Title="MAC Address 1" SortBy="@(x => x.Mac_Address1)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "Mac_Address1"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.Mac_Address1</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Mac_Address2" Title="MAC Address 2"/>
+                            
+                            <!-- Service Ends with validation indicator -->
+                            <TemplateColumn HeaderStyle="width: 100px; max-width: 100px;" Title="Service Ends" SortBy="@(x => x.Service_Ends)">
+                                <CellTemplate>
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        @if (HasValidationIssue(context.Item.Inst_No, "Service_Ends"))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                        <MudText>@context.Item.Service_Ends</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            
+                            <PropertyColumn HeaderStyle="min-width: 120px; max-width: 120px;" Property="x => x.MachineType" Title="Machine Type"/>
+                        </Columns>
+                        <ChildRowContent>
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">Full info for @context.Item.PC_Name</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudGrid>
+                                        <MudItem xs="6">
+                                            <MudList>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.EntryId.ToString()))">
+                                                    <MudListItemText>Entry ID: @context.Item.EntryId</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Entry_Date.ToString()))">
+                                                    <MudListItemText>Entry Date: @context.Item.Entry_Date</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.PC_Name))">
+                                                    <MudListItemText>PC Name: @context.Item.PC_Name</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Inst_No.ToString()))">
+                                                    <MudListItemText>Inst No: @context.Item.Inst_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Creator_Initials))">
+                                                    <MudListItemText>Creator Initials: @context.Item.Creator_Initials</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.App_Owner))">
+                                                    <MudListItemText>App Owner: @context.Item.App_Owner</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                                    <MudListItemText>Machine Type: @context.Item.MachineType</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Start.ToString()))">
+                                                    <MudListItemText>Service Start: @context.Item.Service_Start</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Ends.ToString()))">
+                                                    <MudListItemText>Service Ends: @context.Item.Service_Ends</MudListItemText>
+                                                </MudListItem>
+                                            </MudList>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudList>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Status))">
+                                                    <MudListItemText>Status: @context.Item.Status</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Serial_No))">
+                                                    <MudListItemText>Serial No: @context.Item.Serial_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address1))">
+                                                    <MudListItemText>Mac Address 1: @context.Item.Mac_Address1</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address2))">
+                                                    <MudListItemText>Mac Address 2: @context.Item.Mac_Address2</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.UUID))">
+                                                    <MudListItemText>UUID: @context.Item.UUID</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Product_No))">
+                                                    <MudListItemText>Product No: @context.Item.Product_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Model_Name_and_No))">
+                                                    <MudListItemText>Model Name and No: @context.Item.Model_Name_and_No</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Department))">
+                                                    <MudListItemText>Department: @context.Item.Department</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Note))">
+                                                    <MudListItemText>Note: @context.Item.Note</MudListItemText>
+                                                </MudListItem>
+                                                <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                                    <MudListItemText>MachineType: @context.Item.MachineType</MudListItemText>
+                                                </MudListItem>
+                                            </MudList>
+                                        </MudItem>
+                                    </MudGrid>
+                                    <!-- Print Button -->
+                                    @* <MudCardActions>
+                                        <MudButton Variant="Variant.Filled" 
+                                                 Color="Color.Primary" 
+                                                 StartIcon="@Icons.Material.Filled.Print"
+                                                 OnClick="@(() => OpenPrintDialogFromEquipment(context.Item))">
+                                            Print Labels
+                                        </MudButton>
+                                    </MudCardActions> *@
+                                </MudCardContent>
+                            </MudCard>
+                        </ChildRowContent>
+                        <!-- Updated Pager with binding for All entries tab -->
+                        <PagerContent>
+                            <MudDataGridPager @bind-Page="allEntriesPage" 
+                                              @bind-RowsPerPage="allEntriesPageSize" 
+                                              TotalItems="@equipment.Count" 
+                                              OnPageChanged="OnAllEntriesPageChanged" />
+                        </PagerContent>
+                    </MudDataGrid>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </MudTabPanel>
+    <MudTabPanel Text="New Machines">
+        <MudContainer Class="pa-6">
+            <MudGrid Spacing="2" Justify="Justify.Center"> 
+        <MudItem xs="12">
+            @if (showAdvancedSearch)
+            {
+                <MudCard Class="mb-4">
+                    <MudCardContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.FilterList" />
+                            <MudText Typo="Typo.h6">Advanced Search</MudText>
+                        </MudStack>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.InstNo" Label="Inst No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.PCName" Label="PC Name" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.SerialNo" Label="Serial No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.MacAddress" Label="MAC Address" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.UUID" Label="UUID" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="advancedFilters.ServiceEndsFrom" Label="Service Ends From" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudStack Row Justify="Justify.FlexEnd" Spacing="2">
+                                    <MudButton Variant="Variant.Outlined" 
+                                              Color="Color.Secondary" 
+                                              OnClick="ClearAdvancedFilters">
+                                        Clear Filters
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Filled" 
+                                              Color="Color.Primary" 
+                                              OnClick="ApplyAdvancedFilters">
+                                        Apply Filters
+                                    </MudButton>
+                                </MudStack>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            }
+            <MudDataGrid T="MachineData" Style="width: 130%; margin-left: -15%;" ColumnResizeMode="ResizeMode.Container" SortMode="SortMode.Multiple" ShowMenuIcon="true" Hideable="true" Items="@newMachines" Dense="true" Hover="true" Bordered="true" Striped="true" QuickFilter="@FilterFunc" Height="600px">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">New Machines</MudText>
+                    <MudSpacer />
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                  Variant="Variant.Outlined" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Small"
+                                  OnClick="ToggleAdvancedSearch">
+                            Advanced
+                        </MudButton>
+                    </MudStack>
+                </ToolBarContent>
+                <Columns>
+                    <HierarchyColumn T="MachineData"></HierarchyColumn>
+                    <PropertyColumn InitialDirection="SortDirection.Descending" HeaderStyle="width: 80px; max-width: 80px;" Property="x => x.Inst_No" Title="Inst No"/>
+                    @* <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.PC_Name" Title="PC Name"/> *@
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Serial_No" Title="Serial No"/>
+                    <PropertyColumn HeaderStyle="width: 90px; max-width: 90px;" Property="x => x.Status"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Mac_Address1" Title="MAC Address"/>
+                    <PropertyColumn HeaderStyle="min-width: 200px;" Property="x => x.UUID"/>
+                    <PropertyColumn HeaderStyle="width: 120px; max-width: 120px;" Property="x => x.Service_Ends" Title="Service Ends"/>    
+                    <TemplateColumn HeaderStyle="min-width: 120px; max-width: 120px;" Title="Actions">
+                        <CellTemplate>
+                            <MudTooltip Text="History" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.History" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogHistory(context.Item))" Variant="Variant.Filled">Machine History</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add Entry" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.PlaylistAddCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogEdit(context.Item))" Variant="Variant.Filled">Add Entry</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Documentation" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.DocumentScanner"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               OnClick="@(() => CopyDocumentationData(context.Item))"
+                                               Variant="Variant.Filled">    
+                                    Documentation
+                                </MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add to DTUPC" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Filled.DomainAdd"
+                                               Color="Color.Info"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenDialogAddToDTUPC(context.Item))"
+                                               Variant="Variant.Filled">
+                                    Add to DTUPC
+                                </MudIconButton>
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <ChildRowContent>
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Full info for @context.Item.PC_Name</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudGrid>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.EntryId.ToString()))">
+                                            <MudListItemText>Entry ID: @context.Item.EntryId</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Entry_Date.ToString()))">
+                                            <MudListItemText>Entry Date: @context.Item.Entry_Date</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.PC_Name))">
+                                            <MudListItemText>PC Name: @context.Item.PC_Name</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Inst_No.ToString()))">
+                                            <MudListItemText>Inst No: @context.Item.Inst_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Creator_Initials))">
+                                            <MudListItemText>Creator Initials: @context.Item.Creator_Initials</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.App_Owner))">
+                                            <MudListItemText>App Owner: @context.Item.App_Owner</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>Machine Type: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Start.ToString()))">
+                                            <MudListItemText>Service Start: @context.Item.Service_Start</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Ends.ToString()))">
+                                            <MudListItemText>Service Ends: @context.Item.Service_Ends</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Status))">
+                                            <MudListItemText>Status: @context.Item.Status</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Serial_No))">
+                                            <MudListItemText>Serial No: @context.Item.Serial_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address1))">
+                                            <MudListItemText>Mac Address 1: @context.Item.Mac_Address1</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address2))">
+                                            <MudListItemText>Mac Address 2: @context.Item.Mac_Address2</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.UUID))">
+                                            <MudListItemText>UUID: @context.Item.UUID</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Product_No))">
+                                            <MudListItemText>Product No: @context.Item.Product_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Model_Name_and_No))">
+                                            <MudListItemText>Model Name and No: @context.Item.Model_Name_and_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Department))">
+                                            <MudListItemText>Department: @context.Item.Department</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Note))">
+                                            <MudListItemText>Note: @context.Item.Note</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>MachineType: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                            </MudGrid>
+                            <!-- Print Button -->
+                            @* <MudCardActions>
+                                <MudButton Variant="Variant.Filled" 
+                                         Color="Color.Primary" 
+                                         StartIcon="@Icons.Material.Filled.Print"
+                                         OnClick="@(() => OpenPrintDialog(context.Item))">
+                                    Print Labels
+                                </MudButton>
+                            </MudCardActions> *@
+                        </MudCardContent>
+                    </MudCard>
+                </ChildRowContent>
+                <PagerContent>
+                    <MudDataGridPager/>
+                </PagerContent>
+            </MudDataGrid>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+</MudTabPanel>
+<MudTabPanel Text="Used Machines">
+    <MudContainer Class="pa-6">
+        <MudGrid Spacing="2" Justify="Justify.Center"> 
+        @if (showAdvancedSearch)
+        {
+            <MudItem xs="12">
+                <MudCard Class="mb-4">
+                    <MudCardContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.FilterList" />
+                            <MudText Typo="Typo.h6">Advanced Search</MudText>
+                        </MudStack>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.InstNo" Label="Inst No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.PCName" Label="PC Name" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.SerialNo" Label="Serial No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.MacAddress" Label="MAC Address" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.UUID" Label="UUID" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="advancedFilters.ServiceEndsFrom" Label="Service Ends From" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudStack Row Justify="Justify.FlexEnd" Spacing="2">
+                                    <MudButton Variant="Variant.Outlined" 
+                                              Color="Color.Secondary" 
+                                              OnClick="ClearAdvancedFilters">
+                                        Clear Filters
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Filled" 
+                                              Color="Color.Primary" 
+                                              OnClick="ApplyAdvancedFilters">
+                                        Apply Filters
+                                    </MudButton>
+                                </MudStack>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+        <MudItem xs="12">
+            <MudDataGrid T="MachineData" Style="width: 130%; margin-left: -15%;" ColumnResizeMode="ResizeMode.Container" SortMode="SortMode.Multiple" ShowMenuIcon="true" Hideable="true" Items="@usedMachines" Dense="true" Hover="true" Bordered="true" Striped="true" QuickFilter="@FilterFunc" Height="600px">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Used Machines still in Service</MudText>
+                    <MudSpacer />
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                  Variant="Variant.Outlined" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Small"
+                                  OnClick="ToggleAdvancedSearch">
+                            Advanced
+                        </MudButton>
+                    </MudStack>
+                </ToolBarContent>
+                <Columns>
+                    <HierarchyColumn T="MachineData"></HierarchyColumn>
+                    <PropertyColumn InitialDirection="SortDirection.Descending" HeaderStyle="width: 80px; max-width: 80px;" Property="x => x.Inst_No" Title="Inst No"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.PC_Name" Title="PC Name"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Serial_No" Title="Serial No"/>
+                    <PropertyColumn HeaderStyle="min-width: 90px;" Property="x => x.Status"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Mac_Address1" Title="MAC Address"/>
+                    <PropertyColumn HeaderStyle="min-width: 200px;" Property="x => x.UUID"/>
+                    <PropertyColumn HeaderStyle="min-width: 100px;" Property="x => x.Service_Ends" Title="Service Ends"/>    
+                    <TemplateColumn HeaderStyle="min-width: 300px;" Title="Actions">
+                        <CellTemplate>
+                            <MudTooltip Text="History" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.History" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogHistory(context.Item))" Variant="Variant.Filled">Machine History</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add Entry" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.PlaylistAddCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogEdit(context.Item))" Variant="Variant.Filled">Add Entry</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Documentation" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.DocumentScanner"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               OnClick="@(() => CopyDocumentationData(context.Item))"
+                                               Variant="Variant.Filled">    
+                                    Documentation
+                                </MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add to DTUPC" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Filled.DomainAdd"
+                                               Color="Color.Info"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenDialogAddToDTUPC(context.Item))"
+                                               Variant="Variant.Filled">
+                                    Add to DTUPC
+                                </MudIconButton>
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <ChildRowContent>
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Full info for @context.Item.PC_Name</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudGrid>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.EntryId.ToString()))">
+                                            <MudListItemText>Entry ID: @context.Item.EntryId</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Entry_Date.ToString()))">
+                                            <MudListItemText>Entry Date: @context.Item.Entry_Date</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.PC_Name))">
+                                            <MudListItemText>PC Name: @context.Item.PC_Name</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Inst_No.ToString()))">
+                                            <MudListItemText>Inst No: @context.Item.Inst_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Creator_Initials))">
+                                            <MudListItemText>Creator Initials: @context.Item.Creator_Initials</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.App_Owner))">
+                                            <MudListItemText>App Owner: @context.Item.App_Owner</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>Machine Type: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Start.ToString()))">
+                                            <MudListItemText>Service Start: @context.Item.Service_Start</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Ends.ToString()))">
+                                            <MudListItemText>Service Ends: @context.Item.Service_Ends</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Status))">
+                                            <MudListItemText>Status: @context.Item.Status</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Serial_No))">
+                                            <MudListItemText>Serial No: @context.Item.Serial_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address1))">
+                                            <MudListItemText>Mac Address 1: @context.Item.Mac_Address1</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address2))">
+                                            <MudListItemText>Mac Address 2: @context.Item.Mac_Address2</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.UUID))">
+                                            <MudListItemText>UUID: @context.Item.UUID</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Product_No))">
+                                            <MudListItemText>Product No: @context.Item.Product_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Model_Name_and_No))">
+                                            <MudListItemText>Model Name and No: @context.Item.Model_Name_and_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Department))">
+                                            <MudListItemText>Department: @context.Item.Department</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Note))">
+                                            <MudListItemText>Note: @context.Item.Note</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>MachineType: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                            </MudGrid>
+                            <!-- Print Button -->
+                            @* <MudCardActions>
+                                <MudButton Variant="Variant.Filled" 
+                                         Color="Color.Primary" 
+                                         StartIcon="@Icons.Material.Filled.Print"
+                                         OnClick="@(() => OpenPrintDialog(context.Item))">
+                                    Print Labels
+                                </MudButton>
+                            </MudCardActions> *@
+                        </MudCardContent>
+                    </MudCard>
+                </ChildRowContent>
+                <PagerContent>
+                    <MudDataGridPager/>
+                </PagerContent>
+            </MudDataGrid>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+</MudTabPanel>
+<MudTabPanel Text="Quarantine Machines">
+    <MudContainer Class="pa-6">
+        <MudGrid Spacing="2" Justify="Justify.Center"> 
+        @if (showAdvancedSearch)
+        {
+            <MudItem xs="12">
+                <MudCard Class="mb-4">
+                    <MudCardContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.FilterList" />
+                            <MudText Typo="Typo.h6">Advanced Search</MudText>
+                        </MudStack>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.InstNo" Label="Inst No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.PCName" Label="PC Name" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.SerialNo" Label="Serial No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.MacAddress" Label="MAC Address" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.UUID" Label="UUID" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="advancedFilters.ServiceEndsFrom" Label="Service Ends From" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudStack Row Justify="Justify.FlexEnd" Spacing="2">
+                                    <MudButton Variant="Variant.Outlined" 
+                                              Color="Color.Secondary" 
+                                              OnClick="ClearAdvancedFilters">
+                                        Clear Filters
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Filled" 
+                                              Color="Color.Primary" 
+                                              OnClick="ApplyAdvancedFilters">
+                                        Apply Filters
+                                    </MudButton>
+                                </MudStack>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+        <MudItem xs="12">
+            <MudDataGrid T="MachineData" Style="width: 130%; margin-left: -15%;" ColumnResizeMode="ResizeMode.Container" SortMode="SortMode.Multiple" ShowMenuIcon="true" Hideable="true" Items="@quarantineMachines" Dense="true" Hover="true" Bordered="true" Striped="true" QuickFilter="@FilterFunc" Height="600px">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Quarantine Machines</MudText>
+                    <MudSpacer />
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                  Variant="Variant.Outlined" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Small"
+                                  OnClick="ToggleAdvancedSearch">
+                            Advanced
+                        </MudButton>
+                    </MudStack>
+                </ToolBarContent>
+                <Columns>
+                    <HierarchyColumn T="MachineData"></HierarchyColumn>
+                    <PropertyColumn InitialDirection="SortDirection.Descending" HeaderStyle="width: 80px; max-width: 80px;" Property="x => x.Inst_No" Title="Inst No"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.PC_Name" Title="PC Name"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Serial_No" Title="Serial No"/>
+                    <PropertyColumn HeaderStyle="width: 90px; max-width: 90px;" Property="x => x.Status"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Mac_Address1" Title="MAC Address"/>
+                    <PropertyColumn HeaderStyle="min-width: 200px;" Property="x => x.UUID"/>
+                    <PropertyColumn HeaderStyle="width: 100px; max-width: 100px;" Property="x => x.Service_Ends" Title="Service Ends"/>    
+                    <TemplateColumn HeaderStyle="min-width: 300px;" Title="Actions">
+                        <CellTemplate>
+                            <MudTooltip Text="History" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.History" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogHistory(context.Item))" Variant="Variant.Filled">Machine History</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add Entry" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.PlaylistAddCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogEdit(context.Item))" Variant="Variant.Filled">Add Entry</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Documentation" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.DocumentScanner"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               OnClick="@(() => CopyDocumentationData(context.Item))"
+                                               Variant="Variant.Filled">    
+                                    Documentation
+                                </MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add to DTUPC" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Filled.DomainAdd"
+                                               Color="Color.Info"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenDialogAddToDTUPC(context.Item))"
+                                               Variant="Variant.Filled">
+                                    Add to DTUPC
+                                </MudIconButton>
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <ChildRowContent>
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Full info for @context.Item.PC_Name</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudGrid>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.EntryId.ToString()))">
+                                            <MudListItemText>Entry ID: @context.Item.EntryId</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Entry_Date.ToString()))">
+                                            <MudListItemText>Entry Date: @context.Item.Entry_Date</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.PC_Name))">
+                                            <MudListItemText>PC Name: @context.Item.PC_Name</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Inst_No.ToString()))">
+                                            <MudListItemText>Inst No: @context.Item.Inst_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Creator_Initials))">
+                                            <MudListItemText>Creator Initials: @context.Item.Creator_Initials</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.App_Owner))">
+                                            <MudListItemText>App Owner: @context.Item.App_Owner</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>Machine Type: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Start.ToString()))">
+                                            <MudListItemText>Service Start: @context.Item.Service_Start</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Ends.ToString()))">
+                                            <MudListItemText>Service Ends: @context.Item.Service_Ends</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Status))">
+                                            <MudListItemText>Status: @context.Item.Status</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Serial_No))">
+                                            <MudListItemText>Serial No: @context.Item.Serial_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address1))">
+                                            <MudListItemText>Mac Address 1: @context.Item.Mac_Address1</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address2))">
+                                            <MudListItemText>Mac Address 2: @context.Item.Mac_Address2</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.UUID))">
+                                            <MudListItemText>UUID: @context.Item.UUID</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Product_No))">
+                                            <MudListItemText>Product No: @context.Item.Product_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Model_Name_and_No))">
+                                            <MudListItemText>Model Name and No: @context.Item.Model_Name_and_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Department))">
+                                            <MudListItemText>Department: @context.Item.Department</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Note))">
+                                            <MudListItemText>Note: @context.Item.Note</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>MachineType: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                            </MudGrid>
+                            <!-- Print Button -->
+                            @* <MudCardActions>
+                                <MudButton Variant="Variant.Filled" 
+                                         Color="Color.Primary" 
+                                         StartIcon="@Icons.Material.Filled.Print"
+                                         OnClick="@(() => OpenPrintDialog(context.Item))">
+                                    Print Labels
+                                </MudButton>
+                            </MudCardActions> *@
+                        </MudCardContent>
+                    </MudCard>
+                </ChildRowContent>
+                <PagerContent>
+                    <MudDataGridPager/>
+                </PagerContent>
+            </MudDataGrid>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+</MudTabPanel>
+
+<MudTabPanel Text="OLD Machines">
+    <MudContainer Class="pa-6">
+        <MudGrid Spacing="2" Justify="Justify.Center"> 
+        @if (showAdvancedSearch)
+        {
+            <MudItem xs="12">
+                <MudCard Class="mb-4">
+                    <MudCardContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.FilterList" />
+                            <MudText Typo="Typo.h6">Advanced Search</MudText>
+                        </MudStack>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.InstNo" Label="Inst No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.PCName" Label="PC Name" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.SerialNo" Label="Serial No" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.MacAddress" Label="MAC Address" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.UUID" Label="UUID" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.Department" Label="Department" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.AppOwner" Label="App Owner" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.CreatorInitials" Label="Creator" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect @bind-Value="advancedFilters.Status" Label="Status" Variant="Variant.Outlined" Clearable="true">
+                                    <MudSelectItem Value="@("Modtaget (Ny)")" />
+                                    <MudSelectItem Value="@("På Lager")" />
+                                    <MudSelectItem Value="@("På Lager (Brugt)")" />
+                                    <MudSelectItem Value="@("Hos Bruger")" />
+                                    <MudSelectItem Value="@("Karantæne")" />
+                                    <MudSelectItem Value="@("Kasseret")" />
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="advancedFilters.MachineType" Label="Machine Type" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="advancedFilters.ServiceEndsFrom" Label="Service Ends From" Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mt-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyAdvancedFilters">Apply Filters</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ClearAdvancedFilters">Clear Filters</MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+
+        <MudItem xs="12">
+            <MudDataGrid T="OLDEquipmentData" Style="width: 130%; margin-left: -15%;" ColumnResizeMode="ResizeMode.Container" SortMode="SortMode.Multiple" ShowMenuIcon="true" Hideable="true" Items="@oldMachines" Dense="true" Hover="true" Bordered="true" Striped="true" QuickFilter="@FilterOLDFunc" Height="600px">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">OLD Machines</MudText>
+                    <MudSpacer />
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                  Variant="Variant.Outlined" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Small"
+                                  OnClick="ToggleAdvancedSearch">
+                            Advanced
+                        </MudButton>
+                    </MudStack>
+                </ToolBarContent>
+                <Columns>
+                    <HierarchyColumn T="OLDEquipmentData"></HierarchyColumn>
+                    <PropertyColumn InitialDirection="SortDirection.Descending" HeaderStyle="width: 80px; max-width: 80px;" Property="x => x.Inst_No" Title="Inst No"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.PC_Name" Title="PC Name"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Serial_No" Title="Serial No"/>
+                    <PropertyColumn HeaderStyle="width: 90px; max-width: 90px;" Property="x => x.Status"/>
+                    <PropertyColumn HeaderStyle="min-width: 150px;" Property="x => x.Mac_Address1" Title="MAC Address"/>
+                    <PropertyColumn HeaderStyle="min-width: 200px;" Property="x => x.UUID"/>
+                    <PropertyColumn HeaderStyle="width: 100px; max-width: 100px;" Property="x => x.Service_Ends" Title="Service Ends"/>    
+                    <TemplateColumn HeaderStyle="min-width: 300px;" Title="Actions">
+                        <CellTemplate>
+                            <MudTooltip Text="History" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.History" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogOLDHistory(context.Item))" Variant="Variant.Filled">Machine History</MudIconButton>
+                            </MudTooltip>
+                            <MudTooltip Text="Add Entry" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Rounded.PlaylistAddCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => OpenDialogOLDEdit(context.Item))" Variant="Variant.Filled">Add Entry</MudIconButton>
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <ChildRowContent>
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Complete Details for OLD Equipment @context.Item.PC_Name</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudGrid>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.EntryId.ToString()))">
+                                            <MudListItemText>Entry ID: @context.Item.EntryId</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Entry_Date))">
+                                            <MudListItemText>Entry Date: @context.Item.Entry_Date</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.PC_Name))">
+                                            <MudListItemText>PC Name: @context.Item.PC_Name</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Inst_No))">
+                                            <MudListItemText>Inst No: @context.Item.Inst_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Creator_Initials))">
+                                            <MudListItemText>Creator Initials: @context.Item.Creator_Initials</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.App_Owner))">
+                                            <MudListItemText>App Owner: @context.Item.App_Owner</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.MachineType))">
+                                            <MudListItemText>Machine Type: @context.Item.MachineType</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Start))">
+                                            <MudListItemText>Service Start: @context.Item.Service_Start</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Service_Ends))">
+                                            <MudListItemText>Service Ends: @context.Item.Service_Ends</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudList>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Status))">
+                                            <MudListItemText>Status: @context.Item.Status</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Serial_No))">
+                                            <MudListItemText>Serial No: @context.Item.Serial_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address1))">
+                                            <MudListItemText>Mac Address 1: @context.Item.Mac_Address1</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Mac_Address2))">
+                                            <MudListItemText>Mac Address 2: @context.Item.Mac_Address2</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.UUID))">
+                                            <MudListItemText>UUID: @context.Item.UUID</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Product_No))">
+                                            <MudListItemText>Product No: @context.Item.Product_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Model_Name_and_No))">
+                                            <MudListItemText>Model Name and No: @context.Item.Model_Name_and_No</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Department))">
+                                            <MudListItemText>Department: @context.Item.Department</MudListItemText>
+                                        </MudListItem>
+                                        <MudListItem OnClick="@(() => CopyTextToClipboard(context.Item.Note))">
+                                            <MudListItemText>Note: @context.Item.Note</MudListItemText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </ChildRowContent>
+                <PagerContent>
+                    <MudDataGridPager/>
+                </PagerContent>
+            </MudDataGrid>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+</MudTabPanel>        </MudTabs>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string searchString { get; set; } = string.Empty;
+    private List<EquipmentData> equipment = new List<EquipmentData>();
+    private List<MachineData> machines = new List<MachineData>();
+    private List<MachineData> newMachines = new List<MachineData>();
+    private List<MachineData> usedMachines = new List<MachineData>();
+    private List<MachineData> quarantineMachines = new List<MachineData>();
+    private List<OLDEquipmentData> oldMachines = new List<OLDEquipmentData>();
+
+    // Original data lists for filtering
+    private List<EquipmentData> originalEquipment = new List<EquipmentData>();
+    private List<MachineData> originalMachines = new List<MachineData>();
+    private List<MachineData> originalNewMachines = new List<MachineData>();
+    private List<MachineData> originalUsedMachines = new List<MachineData>();
+    private List<MachineData> originalQuarantineMachines = new List<MachineData>();
+    private List<OLDEquipmentData> originalOLDMachines = new List<OLDEquipmentData>();
+
+    // Advanced search state
+    private bool showAdvancedSearch = false;
+    private AdvancedSearchFilters advancedFilters = new AdvancedSearchFilters();
+
+    // Validation issues for visual indicators
+    private List<ValidationIssue> validationIssues = new List<ValidationIssue>();
+    private Dictionary<(int instNo, string fieldName), ValidationIssue> validationLookup = new Dictionary<(int, string), ValidationIssue>();
+
+    // Advanced search filters class
+    public class AdvancedSearchFilters
+    {
+        public string? EntryId { get; set; }
+        public string? InstNo { get; set; }
+        public string? PCName { get; set; }
+        public string? Department { get; set; }
+        public string? AppOwner { get; set; }
+        public string? Status { get; set; }
+        public string? SerialNo { get; set; }
+        public string? MachineType { get; set; }
+        public string? MacAddress { get; set; }
+        public string? UUID { get; set; }
+        public string? CreatorInitials { get; set; }
+        public DateTime? ServiceEndsFrom { get; set; }
+    }
+
+    // Helper method to format Inst_No with "O-" prefix for OLD machines
+    private string FormatInstNo(int instNo)
+    {
+        return instNo < 0 ? $"O-{Math.Abs(instNo)}" : instNo.ToString();
+    }
+
+    // Helper method to copy formatted Inst_No to clipboard
+    private async Task CopyInstNoToClipboard(int instNo)
+    {
+        await CopyTextToClipboard(FormatInstNo(instNo));
+    }
+
+    // Method to convert OLDEquipmentData to MachineData
+    private List<MachineData> ConvertOldMachinesToMachineData(List<OLDEquipmentData> oldMachines)
+    {
+        return oldMachines.Select(oldMachine => new MachineData
+        {
+            EntryId = oldMachine.EntryId,
+            Entry_Date = oldMachine.Entry_Date,
+            PC_Name = oldMachine.PC_Name,
+            // Keep the original Inst_No format with "O-" prefix by parsing the numeric part but using negative values to distinguish OLD machines
+            Inst_No = int.TryParse(oldMachine.Inst_No?.Replace("O-", ""), out int instNo) ? -instNo : 0,
+            Creator_Initials = oldMachine.Creator_Initials,
+            App_Owner = oldMachine.App_Owner,
+            Status = oldMachine.Status,
+            Serial_No = oldMachine.Serial_No,
+            Mac_Address1 = oldMachine.Mac_Address1,
+            Mac_Address2 = oldMachine.Mac_Address2,
+            UUID = oldMachine.UUID,
+            Product_No = oldMachine.Product_No,
+            Model_Name_and_No = oldMachine.Model_Name_and_No,
+            Service_Start = oldMachine.Service_Start,
+            Service_Ends = oldMachine.Service_Ends,
+            Department = oldMachine.Department,
+            Note = oldMachine.Note,
+            MachineType = oldMachine.MachineType
+        }).ToList();
+    }
+
+
+
+    // Pager state for Devices tab
+    private int devicePage = 1;
+    private int devicePageSize = 20;
+
+    // Pager state for All entries tab
+    private int allEntriesPage = 1;
+    private int allEntriesPageSize = 20;
+
+    private async Task CopyTextToClipboard(string text)
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        Snackbar.Add("Copied to clipboard", Severity.Success);
+    }
+    
+    private string FormatDate(DateTime date)
+    {
+        return date.ToString("yyyy-MM-dd");
+    }
+
+    // Validation methods for visual indicators
+    private void LoadValidationIssues()
+    {
+        try
+        {
+            validationIssues = ValidationService.DetectValidationIssues();
+            
+            // Create a lookup dictionary for fast checking
+            validationLookup.Clear();
+            foreach (var issue in validationIssues)
+            {
+                var key = (issue.InstNo, issue.FieldName);
+                if (!validationLookup.ContainsKey(key))
+                {
+                    validationLookup[key] = issue;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle validation loading errors gracefully
+            Snackbar.Add($"Warning: Could not load validation data: {ex.Message}", Severity.Warning);
+            validationIssues = new List<ValidationIssue>();
+            validationLookup = new Dictionary<(int, string), ValidationIssue>();
+        }
+    }
+
+    private bool HasValidationIssue(int instNo, string fieldName)
+    {
+        // For OLD machines (negative values), use the absolute value for validation lookup
+        var actualInstNo = instNo < 0 ? Math.Abs(instNo) : instNo;
+        return validationLookup.ContainsKey((actualInstNo, fieldName));
+    }
+
+    private ValidationIssue? GetValidationIssue(int instNo, string fieldName)
+    {
+        // For OLD machines (negative values), use the absolute value for validation lookup
+        var actualInstNo = instNo < 0 ? Math.Abs(instNo) : instNo;
+        validationLookup.TryGetValue((actualInstNo, fieldName), out var issue);
+        return issue;
+    }
+
+    // Helper method to handle history click with explicit OLD machine detection
+    private async Task HandleHistoryClick(MachineData machine)
+    {
+        if (machine.Inst_No < 0)
+        {
+            // This is an OLD machine, call our custom OLD machine history method
+            await OpenDialogOLDMachineHistory(machine);
+        }
+        else
+        {
+            // This is a regular machine, call the standard history method
+            await OpenDialogHistory(machine);
+        }
+    }
+
+    // Dedicated method for OLD machine history from "All Devices" tab
+    private async Task OpenDialogOLDMachineHistory(MachineData machine)
+    {
+        var actualInstNo = Math.Abs(machine.Inst_No);
+        
+        // Find the original OLD machine data with the "O-" prefix
+        var originalOldMachine = originalOLDMachines.FirstOrDefault(x => 
+            int.TryParse(x.Inst_No?.Replace("O-", ""), out int instNo) && instNo == actualInstNo);
+        
+        if (originalOldMachine != null)
+        {
+            // Use the existing OpenDialogOLDHistory method which we know works
+            await OpenDialogOLDHistory(originalOldMachine);
+        }
+        else
+        {
+            Snackbar.Add("Could not find OLD machine data for history", Severity.Warning);
+        }
+    }
+
+    private async Task OpenDialogHistory(EquipmentData equipment1)
+    {
+        // Check if this is an OLD machine (negative Inst_No)
+        if (equipment1.Inst_No < 0)
+        {
+            // This is an OLD machine, we need to get history from OLD equipment table
+            var actualInstNo = Math.Abs(equipment1.Inst_No);
+            
+            // Find the original OLD machine data with the "O-" prefix
+            var originalOldMachine = originalOLDMachines.FirstOrDefault(x => 
+                int.TryParse(x.Inst_No?.Replace("O-", ""), out int instNo) && instNo == actualInstNo);
+            
+            if (originalOldMachine != null)
+            {
+                // Get history from OLD_Equip table by filtering all OLD equipment for this Inst_No
+                var allOldEquipment = OLDEquipmentService.GetOLDEquipment();
+                var selectedOldEquipment = allOldEquipment.Where(x => 
+                    int.TryParse(x.Inst_No?.Replace("O-", ""), out int instNo) && instNo == actualInstNo).ToList();
+
+                // Convert OLDEquipmentData list to EquipmentData list for the dialog
+                var selectedEquipment = selectedOldEquipment.Select(oldEquip => new EquipmentData
+                {
+                    EntryId = oldEquip.EntryId,
+                    Entry_Date = oldEquip.Entry_Date,
+                    PC_Name = oldEquip.PC_Name,
+                    Inst_No = actualInstNo,
+                    Creator_Initials = oldEquip.Creator_Initials,
+                    App_Owner = oldEquip.App_Owner,
+                    Status = oldEquip.Status,
+                    Serial_No = oldEquip.Serial_No,
+                    Mac_Address1 = oldEquip.Mac_Address1,
+                    Mac_Address2 = oldEquip.Mac_Address2,
+                    UUID = oldEquip.UUID,
+                    Product_No = oldEquip.Product_No,
+                    Model_Name_and_No = oldEquip.Model_Name_and_No,
+                    Service_Start = oldEquip.Service_Start,
+                    Service_Ends = oldEquip.Service_Ends,
+                    Department = oldEquip.Department,
+                    Note = oldEquip.Note,
+                    MachineType = oldEquip.MachineType
+                }).ToList();
+                
+                var parameters = new DialogParameters
+                    {
+                        ["EquipmentData"] = equipment1,
+                        ["EquipmentList"] = selectedEquipment
+                    };
+                var dialog = DialogService.Show<Dialog.HistoryDialog>("OLD PC in the Old_Equip table", parameters);
+                var result = await dialog.Result;
+                if (result != null && !result.Canceled)
+                {
+                    equipment = EquipmentService.GetEquipment();
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Could not find OLD machine data for history", Severity.Warning);
+            }
+        }
+        else
+        {
+            // Regular equipment, use normal equipment table
+            var selectedEquipment = EquipmentService.GetEquipmentSorted(equipment1.Inst_No);
+            var parameters = new DialogParameters
+                {
+                    ["EquipmentData"] = equipment1,
+                    ["EquipmentList"] = selectedEquipment
+                };
+            var dialog = DialogService.Show<Dialog.HistoryDialog>("Machine History", parameters);
+            var result = await dialog.Result;
+            if (result != null && !result.Canceled)
+            {
+                equipment = EquipmentService.GetEquipment();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task OpenDialogHistory(MachineData machine)
+    {
+        // For OLD machines (negative Inst_No), we need to get history from OLD equipment table
+        if (machine.Inst_No < 0)
+        {
+            // This is an OLD machine, we need to handle it like the existing OpenDialogOLDHistory method
+            var actualInstNo = Math.Abs(machine.Inst_No);
+            
+            // Find the original OLD machine data with the "O-" prefix
+            var originalOldMachine = originalOLDMachines.FirstOrDefault(x => 
+                int.TryParse(x.Inst_No?.Replace("O-", ""), out int instNo) && instNo == actualInstNo);
+            
+            if (originalOldMachine != null)
+            {
+                // Convert OLDEquipmentData to EquipmentData for the dialog (similar to existing OpenDialogOLDHistory)
+                var convertedEquipment = new EquipmentData
+                {
+                    EntryId = originalOldMachine.EntryId,
+                    Entry_Date = originalOldMachine.Entry_Date,
+                    PC_Name = originalOldMachine.PC_Name,
+                    Inst_No = actualInstNo, // Use positive value for history lookup
+                    Creator_Initials = originalOldMachine.Creator_Initials,
+                    App_Owner = originalOldMachine.App_Owner,
+                    Status = originalOldMachine.Status,
+                    Serial_No = originalOldMachine.Serial_No,
+                    Mac_Address1 = originalOldMachine.Mac_Address1,
+                    Mac_Address2 = originalOldMachine.Mac_Address2,
+                    UUID = originalOldMachine.UUID,
+                    Product_No = originalOldMachine.Product_No,
+                    Model_Name_and_No = originalOldMachine.Model_Name_and_No,
+                    Service_Start = originalOldMachine.Service_Start,
+                    Service_Ends = originalOldMachine.Service_Ends,
+                    Department = originalOldMachine.Department,
+                    Note = originalOldMachine.Note,
+                    MachineType = originalOldMachine.MachineType
+                };
+
+                // Get history from OLD_Equip table by filtering all OLD equipment for this Inst_No
+                var allOldEquipment = OLDEquipmentService.GetOLDEquipment();
+                var selectedOldEquipment = allOldEquipment.Where(x => 
+                    int.TryParse(x.Inst_No?.Replace("O-", ""), out int instNo) && instNo == actualInstNo).ToList();
+
+                // Convert OLDEquipmentData list to EquipmentData list for the dialog
+                var selectedEquipment = selectedOldEquipment.Select(oldEquip => new EquipmentData
+                {
+                    EntryId = oldEquip.EntryId,
+                    Entry_Date = oldEquip.Entry_Date,
+                    PC_Name = oldEquip.PC_Name,
+                    Inst_No = actualInstNo,
+                    Creator_Initials = oldEquip.Creator_Initials,
+                    App_Owner = oldEquip.App_Owner,
+                    Status = oldEquip.Status,
+                    Serial_No = oldEquip.Serial_No,
+                    Mac_Address1 = oldEquip.Mac_Address1,
+                    Mac_Address2 = oldEquip.Mac_Address2,
+                    UUID = oldEquip.UUID,
+                    Product_No = oldEquip.Product_No,
+                    Model_Name_and_No = oldEquip.Model_Name_and_No,
+                    Service_Start = oldEquip.Service_Start,
+                    Service_Ends = oldEquip.Service_Ends,
+                    Department = oldEquip.Department,
+                    Note = oldEquip.Note,
+                    MachineType = oldEquip.MachineType
+                }).ToList();
+                
+                var parameters = new DialogParameters
+                    {
+                        ["EquipmentData"] = convertedEquipment,
+                        ["EquipmentList"] = selectedEquipment
+                    };
+                var dialog = DialogService.Show<Dialog.HistoryDialog>("OLD PC in the Old_Equip table", parameters);
+                var result = await dialog.Result;
+                if (result != null && !result.Canceled)
+                {
+                    RefreshAllData();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Could not find OLD machine data for history", Severity.Warning);
+            }
+        }
+        else
+        {
+            // For regular machines, use the normal flow
+            var selectedEquipment = EquipmentService.GetEquipmentSorted(machine.Inst_No);
+            
+            var parameters = new DialogParameters
+                {
+                    ["EquipmentData"] = machine,
+                    ["EquipmentList"] = selectedEquipment
+                };
+            var dialog = DialogService.Show<Dialog.HistoryDialog>("Machine History", parameters);
+            var result = await dialog.Result;
+            if (result != null && !result.Canceled)
+            {
+                RefreshAllData();
+            }
+        }
+    }
+
+    private void RefreshAllData()
+    {
+        // Reload original data
+        originalMachines = EquipmentService.GetMachines();
+        originalEquipment = EquipmentService.GetEquipment();
+        originalNewMachines = EquipmentService.GetNewMachines();
+        originalUsedMachines = EquipmentService.GetUsedMachines();
+        originalQuarantineMachines = EquipmentService.GetQuarantineMachines();
+        originalOLDMachines = OLDEquipmentService.GetOLDMachines();
+
+        // Convert OLD machines to MachineData and combine with existing machines
+        var convertedOldMachines = ConvertOldMachinesToMachineData(originalOLDMachines);
+        originalMachines = originalMachines.Concat(convertedOldMachines).ToList();
+
+        // Initialize display lists
+        machines = new List<MachineData>(originalMachines);
+        equipment = new List<EquipmentData>(originalEquipment);
+        newMachines = new List<MachineData>(originalNewMachines);
+        usedMachines = new List<MachineData>(originalUsedMachines);
+        quarantineMachines = new List<MachineData>(originalQuarantineMachines);
+        oldMachines = new List<OLDEquipmentData>(originalOLDMachines);
+
+        StateHasChanged();
+    }
+
+    private async Task OpenDialogEdit(EquipmentData equipment1)
+    {
+        var parameters = new DialogParameters
+            {
+                ["EquipmentData"] = equipment1
+            };
+        var dialog = DialogService.Show<Dialog.EditDialog>("Edit Device", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            equipment = EquipmentService.GetEquipment();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenDialogEdit(MachineData machine)
+    {
+        // For OLD machines, we need to handle the negative Inst_No appropriately
+        var equipmentForEdit = machine;
+        if (machine.Inst_No < 0)
+        {
+            // Create a copy with the positive Inst_No for editing
+            equipmentForEdit = new MachineData
+            {
+                EntryId = machine.EntryId,
+                Entry_Date = machine.Entry_Date,
+                PC_Name = machine.PC_Name,
+                Inst_No = Math.Abs(machine.Inst_No), // Use positive value for OLD machines
+                Creator_Initials = machine.Creator_Initials,
+                App_Owner = machine.App_Owner,
+                Status = machine.Status,
+                Serial_No = machine.Serial_No,
+                Mac_Address1 = machine.Mac_Address1,
+                Mac_Address2 = machine.Mac_Address2,
+                UUID = machine.UUID,
+                Product_No = machine.Product_No,
+                Model_Name_and_No = machine.Model_Name_and_No,
+                Service_Start = machine.Service_Start,
+                Service_Ends = machine.Service_Ends,
+                Department = machine.Department,
+                Note = machine.Note,
+                MachineType = machine.MachineType
+            };
+        }
+
+        var parameters = new DialogParameters
+            {
+                ["EquipmentData"] = equipmentForEdit
+            };
+        var dialog = DialogService.Show<Dialog.EditDialog>("Edit Device", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            RefreshAllData();
+        }
+    }
+
+    private async Task OpenDialogOLDHistory(OLDEquipmentData equipment1)
+    {
+        // Convert OLDEquipmentData to EquipmentData for the dialog
+        var convertedEquipment = new EquipmentData
+        {
+            EntryId = equipment1.EntryId,
+            Entry_Date = equipment1.Entry_Date,
+            PC_Name = equipment1.PC_Name,
+            Inst_No = int.TryParse(equipment1.Inst_No?.Replace("O-", ""), out int instNo) ? instNo : 0,
+            Creator_Initials = equipment1.Creator_Initials,
+            App_Owner = equipment1.App_Owner,
+            Status = equipment1.Status,
+            Serial_No = equipment1.Serial_No,
+            Mac_Address1 = equipment1.Mac_Address1,
+            Mac_Address2 = equipment1.Mac_Address2,
+            UUID = equipment1.UUID,
+            Product_No = equipment1.Product_No,
+            Model_Name_and_No = equipment1.Model_Name_and_No,
+            Service_Start = equipment1.Service_Start,
+            Service_Ends = equipment1.Service_Ends,
+            Department = equipment1.Department,
+            Note = equipment1.Note,
+            MachineType = equipment1.MachineType
+        };
+
+        // Get history from OLD_Equip table by filtering all OLD equipment for this Inst_No
+        var allOldEquipment = OLDEquipmentService.GetOLDEquipment();
+        var selectedOldEquipment = allOldEquipment.Where(x => 
+            int.TryParse(x.Inst_No?.Replace("O-", ""), out int instNo) && instNo == convertedEquipment.Inst_No).ToList();
+
+        // Convert OLDEquipmentData list to EquipmentData list for the dialog
+        var selectedEquipment = selectedOldEquipment.Select(oldEquip => new EquipmentData
+        {
+            EntryId = oldEquip.EntryId,
+            Entry_Date = oldEquip.Entry_Date,
+            PC_Name = oldEquip.PC_Name,
+            Inst_No = convertedEquipment.Inst_No,
+            Creator_Initials = oldEquip.Creator_Initials,
+            App_Owner = oldEquip.App_Owner,
+            Status = oldEquip.Status,
+            Serial_No = oldEquip.Serial_No,
+            Mac_Address1 = oldEquip.Mac_Address1,
+            Mac_Address2 = oldEquip.Mac_Address2,
+            UUID = oldEquip.UUID,
+            Product_No = oldEquip.Product_No,
+            Model_Name_and_No = oldEquip.Model_Name_and_No,
+            Service_Start = oldEquip.Service_Start,
+            Service_Ends = oldEquip.Service_Ends,
+            Department = oldEquip.Department,
+            Note = oldEquip.Note,
+            MachineType = oldEquip.MachineType
+        }).ToList();
+
+        var parameters = new DialogParameters
+            {
+                ["EquipmentData"] = convertedEquipment,
+                ["EquipmentList"] = selectedEquipment,
+                ["Title"] = "OLD PC in the Old_Equip table"
+            };
+        
+        var dialog = DialogService.Show<Dialog.HistoryDialog>("OLD PC in the Old_Equip table", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            oldMachines = OLDEquipmentService.GetOLDMachines();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenDialogOLDEdit(OLDEquipmentData equipment1)
+    {
+        // Convert OLDEquipmentData to EquipmentData for the dialog
+        var convertedEquipment = new EquipmentData
+        {
+            EntryId = equipment1.EntryId,
+            Entry_Date = equipment1.Entry_Date,
+            PC_Name = equipment1.PC_Name,
+            Inst_No = int.TryParse(equipment1.Inst_No?.Replace("O-", ""), out int instNo) ? instNo : 0,
+            Creator_Initials = equipment1.Creator_Initials,
+            App_Owner = equipment1.App_Owner,
+            Status = equipment1.Status,
+            Serial_No = equipment1.Serial_No,
+            Mac_Address1 = equipment1.Mac_Address1,
+            Mac_Address2 = equipment1.Mac_Address2,
+            UUID = equipment1.UUID,
+            Product_No = equipment1.Product_No,
+            Model_Name_and_No = equipment1.Model_Name_and_No,
+            Service_Start = equipment1.Service_Start,
+            Service_Ends = equipment1.Service_Ends,
+            Department = equipment1.Department,
+            Note = equipment1.Note,
+            MachineType = equipment1.MachineType
+        };
+
+        var parameters = new DialogParameters
+            {
+                ["EquipmentData"] = convertedEquipment
+            };
+        var dialog = DialogService.Show<Dialog.EditDialog>("Edit Device", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            oldMachines = OLDEquipmentService.GetOLDMachines();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenDialogAddToDTUPC(EquipmentData equipmentRow)
+    {
+        if (equipmentRow == null)
+        {
+            Snackbar.Add("Error: No equipment data selected!", Severity.Error);
+            return;
+        }
+
+        var parameters = new DialogParameters
+            {
+                ["EquipmentData"] = equipmentRow
+            };
+
+        var dialogOptions = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+        var dialog = DialogService.Show<AddToDTUPCDialog>("Add Device to DTUPC", parameters, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Device added to DTUPC!", Severity.Success);
+        }
+    }
+
+
+
+    private async void OpenOutputLoading()
+    {
+        // Optional folder path - only save locally if the directory exists and is writable
+        var folderPath = "C:\\Equip_Expo\\Equip_Expo"; // This will be tried but failure won't break the export
+        var excelData = EquipmentUtils.ExportTableToExcel(DatabaseHelper.GetConnection().ConnectionString, folderPath);
+        var fileName = $"EquipmentData{EquipmentUtils.CurrentDayDisplay()}.xlsx";
+        var mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        await JSRuntime.InvokeVoidAsync("downloadFile", fileName, mimeType, Convert.ToBase64String(excelData));
+    }
+
+    protected override void OnInitialized()
+    {
+        // Load original data
+        originalMachines = EquipmentService.GetMachines();
+        originalEquipment = EquipmentService.GetEquipment();
+        originalNewMachines = EquipmentService.GetNewMachines();
+        originalUsedMachines = EquipmentService.GetUsedMachines();
+        originalQuarantineMachines = EquipmentService.GetQuarantineMachines();
+        originalOLDMachines = OLDEquipmentService.GetOLDMachines();
+
+        // Convert OLD machines to MachineData and combine with existing machines
+        var convertedOldMachines = ConvertOldMachinesToMachineData(originalOLDMachines);
+        originalMachines = originalMachines.Concat(convertedOldMachines).ToList();
+
+        // Initialize display lists
+        machines = new List<MachineData>(originalMachines);
+        equipment = new List<EquipmentData>(originalEquipment);
+        newMachines = new List<MachineData>(originalNewMachines);
+        usedMachines = new List<MachineData>(originalUsedMachines);
+        quarantineMachines = new List<MachineData>(originalQuarantineMachines);
+        oldMachines = new List<OLDEquipmentData>(originalOLDMachines);
+
+        // Load validation issues for visual indicators
+        LoadValidationIssues();
+    }
+
+    // Advanced search methods
+    private void ToggleAdvancedSearch()
+    {
+        showAdvancedSearch = !showAdvancedSearch;
+        StateHasChanged();
+    }
+
+    private void ClearAdvancedFilters()
+    {
+        advancedFilters = new AdvancedSearchFilters();
+        ApplyAdvancedFilters();
+    }
+
+    private void ApplyAdvancedFilters()
+    {
+        // Apply filters to machines (Devices tab)
+        machines = FilterMachineData(originalMachines);
+        
+        // Apply filters to equipment (All entries tab)
+        equipment = FilterEquipmentData(originalEquipment);
+        
+        // Apply filters to specific machine types
+        newMachines = FilterMachineData(originalNewMachines);
+        usedMachines = FilterMachineData(originalUsedMachines);
+        quarantineMachines = FilterMachineData(originalQuarantineMachines);
+        
+        StateHasChanged();
+    }
+
+    private List<MachineData> FilterMachineData(List<MachineData> sourceData)
+    {
+        var filtered = sourceData.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.InstNo))
+            filtered = filtered.Where(x => x.Inst_No.ToString().Contains(advancedFilters.InstNo, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.PCName))
+            filtered = filtered.Where(x => x.PC_Name != null && x.PC_Name.Contains(advancedFilters.PCName, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.Department))
+            filtered = filtered.Where(x => x.Department != null && x.Department.Contains(advancedFilters.Department, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.AppOwner))
+            filtered = filtered.Where(x => x.App_Owner != null && x.App_Owner.Contains(advancedFilters.AppOwner, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.Status))
+            filtered = filtered.Where(x => x.Status != null && x.Status.Equals(advancedFilters.Status, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.SerialNo))
+            filtered = filtered.Where(x => x.Serial_No != null && x.Serial_No.Contains(advancedFilters.SerialNo, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.MachineType))
+            filtered = filtered.Where(x => x.MachineType != null && x.MachineType.Contains(advancedFilters.MachineType, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.MacAddress))
+            filtered = filtered.Where(x => x.Mac_Address1 != null && x.Mac_Address1.Contains(advancedFilters.MacAddress, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.UUID))
+            filtered = filtered.Where(x => x.UUID != null && x.UUID.Contains(advancedFilters.UUID, StringComparison.OrdinalIgnoreCase));
+
+        if (advancedFilters.ServiceEndsFrom.HasValue)
+        {
+            var filteredList = filtered.ToList().Where(x => 
+            {
+                if (string.IsNullOrEmpty(x.Service_Ends)) return false;
+                return DateTime.TryParse(x.Service_Ends, out DateTime serviceEnd) && 
+                       serviceEnd >= advancedFilters.ServiceEndsFrom.Value;
+            }).ToList();
+            return filteredList;
+        }
+
+        return filtered.ToList();
+    }
+
+    private List<EquipmentData> FilterEquipmentData(List<EquipmentData> sourceData)
+    {
+        var filtered = sourceData.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.EntryId))
+            filtered = filtered.Where(x => x.EntryId.ToString().Contains(advancedFilters.EntryId, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.InstNo))
+            filtered = filtered.Where(x => x.Inst_No.ToString().Contains(advancedFilters.InstNo, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.PCName))
+            filtered = filtered.Where(x => x.PC_Name != null && x.PC_Name.Contains(advancedFilters.PCName, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.AppOwner))
+            filtered = filtered.Where(x => x.App_Owner != null && x.App_Owner.Contains(advancedFilters.AppOwner, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.CreatorInitials))
+            filtered = filtered.Where(x => x.Creator_Initials != null && x.Creator_Initials.Contains(advancedFilters.CreatorInitials, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.Status))
+            filtered = filtered.Where(x => x.Status != null && x.Status.Equals(advancedFilters.Status, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.SerialNo))
+            filtered = filtered.Where(x => x.Serial_No != null && x.Serial_No.Contains(advancedFilters.SerialNo, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(advancedFilters.MachineType))
+            filtered = filtered.Where(x => x.MachineType != null && x.MachineType.Contains(advancedFilters.MachineType, StringComparison.OrdinalIgnoreCase));
+
+        return filtered.ToList();
+    }
+
+    private bool FilterFunc(EquipmentData machine)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (machine.EntryId.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (machine.Entry_Date?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.PC_Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Inst_No.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (machine.Creator_Initials?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.App_Owner?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Status?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Serial_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Mac_Address1?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Mac_Address2?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.UUID?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Product_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Model_Name_and_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Service_Start?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Service_Ends?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Department?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Note?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.MachineType?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    }
+
+    private bool FilterFunc(MachineData machine)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (machine.EntryId.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (machine.Entry_Date?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.PC_Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Inst_No.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (machine.Creator_Initials?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.App_Owner?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Status?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Serial_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Mac_Address1?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Mac_Address2?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.UUID?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Product_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Model_Name_and_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Service_Start?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Service_Ends?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Department?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Note?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.MachineType?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    }
+
+    private bool FilterOLDFunc(OLDEquipmentData machine)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (machine.EntryId.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (machine.Entry_Date?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.PC_Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Inst_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Creator_Initials?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.App_Owner?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Status?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Serial_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Mac_Address1?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Mac_Address2?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.UUID?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Product_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Model_Name_and_No?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Service_Start?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Service_Ends?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Department?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.Note?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (machine.MachineType?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    }
+
+    // Pager event handlers
+    private void OnDevicePageChanged()
+    {
+        // If additional logic is needed when the page changes, add it here.
+        StateHasChanged();
+    }
+
+    private void OnAllEntriesPageChanged()
+    {
+        StateHasChanged();
+    }
+
+    // CopyDocumentationData task to copy machine documentation info to the clipboard.
+    private async Task CopyDocumentationData(MachineData machine)
+    {
+        var documentationText =
+            $"Inst_No: {FormatInstNo(machine.Inst_No)}\n" +
+            $"S/N: {machine.Serial_No}\n" +
+            $"UUID: {machine.UUID}\n" +
+            $"MAC1: {machine.Mac_Address1}\n" +
+            $"MAC2: {machine.Mac_Address2}\n" +
+            $"PC_Name: {machine.PC_Name}\n" +
+            $"MachineType: {machine.MachineType}\n" +
+            $"Note: {machine.Note}";
+
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", documentationText);
+        Snackbar.Add("Documentation copied to clipboard", Severity.Success);
+    }
+
+    private async Task ExportDTUPCLogToExcel()
+    {
+        // Optional folder path - only save locally if the directory exists and is writable  
+        var folderPath = "C:\\Equip_Expo\\DTUPC_Add_Logs"; // This will be tried but failure won't break the export
+        var logEntries = DatabaseHelper.GetAllDTUPCLogEntries();
+        var excelData2 = EquipmentUtils.ExportDTUPCLogToExcel(logEntries, folderPath);
+
+        var fileName = $"DTUPC_Log{EquipmentUtils.CurrentDayDisplay()}.xlsx";
+        var mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        await JSRuntime.InvokeVoidAsync("downloadFile", fileName, mimeType, Convert.ToBase64String(excelData2));
+    }
+
+    @* private async Task OpenPrintDialog(MachineData machineData)
+    {
+        if (machineData == null)
+        {
+            Snackbar.Add("Error: No machine data selected!", Severity.Error);
+            return;
+        }
+
+        var parameters = new DialogParameters
+            {
+                ["MachineData"] = machineData
+            };
+
+        var dialogOptions = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
+            };
+
+        var dialog = DialogService.Show<Dialog.PrintDialog>("Print Labels", parameters, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Labels printed successfully!", Severity.Success);
+        }
+    }
+
+    private async Task OpenPrintDialogFromEquipment(EquipmentData equipmentData)
+    {
+        if (equipmentData == null)
+        {
+            Snackbar.Add("Error: No equipment data selected!", Severity.Error);
+            return;
+        }
+
+        // Convert EquipmentData to MachineData for the print dialog
+        var machineData = new MachineData
+        {
+            EntryId = equipmentData.EntryId,
+            Entry_Date = equipmentData.Entry_Date,
+            PC_Name = equipmentData.PC_Name,
+            Inst_No = equipmentData.Inst_No,
+            Creator_Initials = equipmentData.Creator_Initials,
+            App_Owner = equipmentData.App_Owner,
+            Status = equipmentData.Status,
+            Serial_No = equipmentData.Serial_No,
+            Mac_Address1 = equipmentData.Mac_Address1,
+            Mac_Address2 = equipmentData.Mac_Address2,
+            UUID = equipmentData.UUID,
+            Product_No = equipmentData.Product_No,
+            Model_Name_and_No = equipmentData.Model_Name_and_No,
+            Service_Start = equipmentData.Service_Start,
+            Service_Ends = equipmentData.Service_Ends,
+            Department = equipmentData.Department,
+            Note = equipmentData.Note,
+            MachineType = equipmentData.MachineType
+        };
+
+        var parameters = new DialogParameters
+            {
+                ["MachineData"] = machineData
+            };
+
+        var dialogOptions = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
+            };
+
+        var dialog = DialogService.Show<Dialog.PrintDialog>("Print Labels", parameters, dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Labels printed successfully!", Severity.Success);
+        }
+    } *@
+}

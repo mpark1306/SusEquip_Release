@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>C:\Program Files\IIS Express\AppServer\empty_wwwroot\SusEquip</_PublishTargetUrl>
+    <History>False|2025-03-31T08:11:27.4625823Z||;True|2024-04-17T14:22:42.9129206+02:00||;</History>
+    <LastFailureDetails />
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="DefaultConnection">
+      <Value>Data Source=10.61.0.159%3bInitial Catalog=MPDB%3bUser ID=sa%3bPassword=NoCakeForMe1306%3bConnect Timeout=30%3bEncrypt=True%3bTrust Server Certificate=True%3bApplication Intent=ReadWrite%3bMulti Subnet Failover=False</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+</Project>

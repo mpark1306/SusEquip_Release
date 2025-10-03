@@ -1,0 +1,233 @@
+﻿@using System.Net.Http.Json
+@using MudBlazor
+@using MudBlazor.Services
+@using SusEquip.Data
+@using SusEquip.Data.Models
+@using SusEquip.Shared
+@using MudBlazor.Interfaces
+@inject SusEquip.Data.Services.EquipmentService _Equipment
+@inject SusEquip.Data.DatabaseHelper DatabaseHelper
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-0">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 12px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Align="Align.Center">
+                        @Title
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        History for Inst No: @EquipmentData.Inst_No
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Equipment History Card -->
+            <MudCard Elevation="4" Style="border-radius: 12px;" Class="mb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6">Equipment Timeline</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-6">
+                <MudTable Items="@EquipmentList" Dense="@true" Hover="@true" Bordered="@true" Filter="FilterFunc1">
+                    <ToolBarContent>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="@searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.EntryId)">Entry ID</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Entry_Date)">Dato & Tid</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Inst_No)">Inst Nr</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Creator_Initials)">Creator</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.App_Owner)">App-Owner</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Status)">Status</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Serial_No)">Serial number</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Mac_Address1)">MAC Adress 1</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Mac_Address2)">MAC Adress 2</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.UUID)">UUID</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Product_No)">Product Number</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Model_Name_and_No)">Modelname and Number</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.PC_Name)">PC Name</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Department)">Department</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Service_Start)">Service Start</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Service_Ends)">Service End</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.Note)">Note</MudTableSortLabel>
+                        </MudTh>
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<EquipmentData, object>(x => x.MachineType)">Machine Type</MudTableSortLabel>
+                        </MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Entry Id">@context.EntryId</MudTd>
+                        <MudTd DataLabel="Date and time">@context.Entry_Date</MudTd>
+                        <MudTd DataLabel="Inst Nr">@context.Inst_No</MudTd>
+                        <MudTd DataLabel="Creator Initials">@context.Creator_Initials</MudTd>
+                        <MudTd DataLabel="App-Owner">@context.App_Owner</MudTd>
+                        <MudTd DataLabel="Status">@context.Status</MudTd>
+                        <MudTd DataLabel="Serial number">@context.Serial_No</MudTd>
+                        <MudTd DataLabel="MAC1">@context.Mac_Address1</MudTd>
+                        <MudTd DataLabel="MAC2">@context.Mac_Address2</MudTd>
+                        <MudTd DataLabel="UUID">@context.UUID</MudTd>
+                        <MudTd DataLabel="Product Number">@context.Product_No</MudTd>
+                        <MudTd DataLabel="Modelname & Nr">@context.Model_Name_and_No</MudTd>
+                        <MudTd DataLabel="Desc">@context.PC_Name</MudTd>
+                        <MudTd DataLabel="Department">@context.Department</MudTd>
+                        <MudTd DataLabel="Service Start">@context.Service_Start</MudTd>
+                        <MudTd DataLabel="Service End">@context.Service_Ends</MudTd>
+                        <MudTd DataLabel="Note">@context.Note</MudTd>
+                        <MudTd DataLabel="Machine Type">@context.MachineType</MudTd>
+                        <MudTd><MudIconButton Icon="@Icons.Material.Rounded.Delete" Color="Color.Success" Size="Size.Large" OnClick="(() => _Equipment.DeleteEntry(context.Inst_No, context.EntryId))" Variant="Variant.Filled">Delete Entry</MudIconButton></MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+                </MudCardContent>
+            </MudCard>
+
+            <!-- DTUPC Log Card -->
+            <MudCard Elevation="4" Style="border-radius: 12px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Secondary" />
+                            <MudText Typo="Typo.h6">DTUPC Log</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-6">
+                    @if (LogEntry != null)
+                    {
+                        <MudTable Items="@(new List<DTUPC_Log> { LogEntry })" Dense="@true" Hover="@true" Bordered="@true">
+                            <HeaderContent>
+                                <MudTh>Log ID</MudTh>
+                                <MudTh>Entry Date</MudTh>
+                                <MudTh>Creator Initials</MudTh>
+                                <MudTh>PC Name</MudTh>
+                                <MudTh>MAC Address 1</MudTh>
+                                <MudTh>Serial No</MudTh>
+                                <MudTh>UUID</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Log ID">@context.LogId</MudTd>
+                                <MudTd DataLabel="Entry Date">@context.EntryDate</MudTd>
+                                <MudTd DataLabel="Creator Initials">@context.CreatorInitials</MudTd>
+                                <MudTd DataLabel="PC Name">@context.PCName</MudTd>
+                                <MudTd DataLabel="MAC Address 1">@context.MacAddress1</MudTd>
+                                <MudTd DataLabel="Serial No">@context.SerialNo</MudTd>
+                                <MudTd DataLabel="UUID">@context.UUID</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <MudText>No matching log entry found.</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+            <MudStack Row Justify="Justify.FlexEnd" Spacing="3">
+                <MudButton Color="Color.Primary" 
+                         Variant="Variant.Filled"
+                         OnClick="Close"
+                         StartIcon="@Icons.Material.Filled.Check">
+                    Close
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string ContentText { get; set; } = string.Empty;
+    [Parameter] public List<EquipmentData> EquipmentList { get; set; } = new();
+    [Parameter] public EquipmentData EquipmentData { get; set; } = default!;
+    [Parameter] public string Title { get; set; } = "Equipment History";
+
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    private string searchString { get; set; } = string.Empty;
+    private DTUPC_Log? LogEntry { get; set; }
+
+    protected override void OnInitialized()
+    {
+        LogEntry = DatabaseHelper.GetLogEntryBySerialNo(EquipmentData.Serial_No);
+    }
+
+    private bool FilterFunc1(EquipmentData eq) => FilterFunc(eq, searchString);
+    private bool FilterFunc(EquipmentData eq, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (eq.Model_Name_and_No.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.Mac_Address1.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.Mac_Address2.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.Creator_Initials.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.Status.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.App_Owner.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.Serial_No.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.UUID.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.Product_No.Contains(searchString, StringComparison.OrdinalIgnoreCase) || eq.PC_Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ($"{eq.EntryId} {eq.Entry_Date} {eq.Inst_No} {eq.App_Owner}{eq.Service_Start} {eq.Service_Ends} {eq.Note} {eq.MachineType}".Contains(searchString))
+            return true;
+        return false;
+    }
+    void Close() => MudDialog.Close(DialogResult.Ok(true));
+
+    private async Task OnButtonClicked()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Changes are permanent for this entry.",
+            yesText: "Understood", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            // User clicked "Yes"
+            _Equipment.DeleteEntry(EquipmentData.Inst_No, EquipmentData.EntryId);
+            Snackbar.Add("Entry deleted", Severity.Success);
+        }
+        else if (result == false)
+        {
+            // User clicked "Cancel"
+            Snackbar.Add("Entry not deleted", Severity.Error);
+        }
+        StateHasChanged();
+    }
+}

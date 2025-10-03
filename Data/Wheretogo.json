@@ -1,0 +1,101 @@
+{
+  "links": [
+    {
+      "name": "OneDrive vejledninger (AIT)",
+      "url": "https://www.inside.dtu.dk/da/medarbejder/it-og-telefoni/it-support-og-kontakt/guides/onedrive",
+      "notes": ""
+    },
+    {
+      "name": "AvePoint Recenter (restore fra 365)",
+      "url": "https://recenter.avepointonlineservices.com/m365/#/",
+      "notes": ""
+    },
+    {
+      "name": "DTUPC-Frontend: DTUPC-Frontend",
+      "url": "https://dtupcfrontend.ait.dtu.dk",
+      "notes": "Login med useraccount"
+    },
+    {
+      "name": "DTU Fusion Login",
+      "url": "https://efzu.login.em2.oraclecloud.com/",
+      "notes": ""
+    },
+    {
+      "name": "Officielt HP� garantitjek - Danmark | HP� kundesupport",
+      "url": "https://support.hp.com/dk-da/checkwarranty",
+      "notes": ""
+    },
+    {
+      "name": "Netapp ONTAP System Manager",
+      "url": "https://byg-cnaclpri/sysmgr/",
+      "notes": ""
+    },
+    {
+      "name": "Login or Register | Dell US",
+      "url": "https://www.dell.com/Identity/global/LoginOrRegister/",
+      "notes": ""
+    },
+    {
+      "name": "Director (tildel SX- eller BBar-maskiner)",
+      "url": "http://bb-director.win.dtu.dk/Director/LogOn.aspx",
+      "notes": "Login med adm-account"
+    },
+    {
+      "name": "VMWare",
+      "url": "https://byg-cvcs4.win.dtu.dk/",
+      "notes": ""
+    },
+    {
+      "name": "DaluxFM Helpdesk",
+      "url": "https://helpdesk.dalux.com/dtufm/",
+      "notes": ""
+    },
+    {
+      "name": "Asset Bitlocker Status (AIT)",
+      "url": "https://ait-pcmdb01.win.dtu.dk/Reports/report/ConfigMgr_P01/SystemCenterDudes/Asset%20-%20Bitlocker%20Status",
+      "notes": "Login med adm-account"
+    },
+    {
+      "name": "Microsoft BitLocker Administration and Monitoring (AIT)",
+      "url": "https://ait-pcmwfe01.win.dtu.dk/helpdesk/",
+      "notes": "Login med adm-account"
+    },
+    {
+      "name": "DTU Whois",
+      "url": "https://whois.ait.dtu.dk/",
+      "notes": "Login med user+azure"
+    },
+    {
+      "name": "Asset - Windows 11 Readiness (AIT)",
+      "url": "https://ait-pcmdb01.win.dtu.dk/Reports/report/ConfigMgr_P01/SystemCenterDudes/Asset%20-%20Windows%2011%20Readiness",
+      "notes": "Login med adm-account"
+    },
+    {
+      "name": "Sikkerhed (AIT)",
+      "url": "https://security.ait.dtu.dk/",
+      "notes": "Login med user/AzureMFA"
+    },
+    {
+      "name": "Hent Adobe produkter",
+      "url": "https://creativecloud.adobe.com/apps",
+      "notes": "Login med useraccount"
+    },
+    {
+      "name": "Tildel Adobe licenser",
+      "url": "https://adminconsole.adobe.com/",
+      "notes": "Login med useraccount (som DAST giver)"
+    },
+    {
+      "name": "AnyConnect software, Routerfilter, DNS dumps mv.",
+      "url": "https://net.ait.dtu.dk/",
+      "notes": ""
+    },
+    {
+      "name": "Filesender",
+      "url": "https://filesender.deic.dk/filesender/",
+      "notes": ""
+    }
+  ]
+}
+
+   

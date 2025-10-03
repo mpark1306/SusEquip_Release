@@ -1,0 +1,83 @@
+{
+  "CoverageConfiguration": {
+    "OutputDirectory": "TestResults/Coverage",
+    "ReportTitle": "SusEquip Phase 5.5 Test Coverage Report",
+    "ReportTypes": [
+      "Html",
+      "HtmlSummary", 
+      "Cobertura",
+      "OpenCover",
+      "lcov",
+      "Badges"
+    ],
+    "MinimumCoverageThreshold": 80.0,
+    "BranchCoverageThreshold": 70.0,
+    "ExcludePatterns": [
+      "**/bin/**",
+      "**/obj/**", 
+      "**/TestResults/**",
+      "**/*Tests.cs",
+      "**/*Test.cs",
+      "**/Program.cs",
+      "**/GlobalUsings.cs",
+      "**/Migrations/**",
+      "**/wwwroot/**"
+    ],
+    "IncludePatterns": [
+      "**/Data/Services/ErrorHandling/**",
+      "**/Data/Services/Equipment/**",
+      "**/Data/Commands/**",
+      "**/Data/Models/**",
+      "**/Data/Utilities/**"
+    ],
+    "Settings": {
+      "IncludeBranchCoverage": true,
+      "VerboseOutput": false,
+      "GenerateHistoryReports": true,
+      "IncludeTestAssembly": false,
+      "ExcludeByAttribute": [
+        "Obsolete",
+        "GeneratedCode",
+        "CompilerGenerated",
+        "ExcludeFromCodeCoverage"
+      ],
+      "ExcludeByFile": [
+        "*.Designer.cs",
+        "*.g.cs", 
+        "*.g.i.cs"
+      ]
+    },
+    "ContinuousIntegration": {
+      "FailBuildOnLowCoverage": true,
+      "GenerateBadges": true,
+      "PublishResults": true,
+      "ArtifactFormats": [
+        "html",
+        "cobertura",
+        "json"
+      ]
+    },
+    "Notifications": {
+      "SlackWebhook": "",
+      "TeamsWebhook": "",
+      "EmailRecipients": []
+    }
+  },
+  "BenchmarkCoverageConfiguration": {
+    "IncludeBenchmarks": false,
+    "BenchmarkPatterns": [
+      "**/Performance/**Benchmarks.cs"
+    ],
+    "SeparateReporting": true
+  },
+  "ReportCustomization": {
+    "CompanyName": "SusEquip Development Team",
+    "ProjectDescription": "Phase 5.5 Integration Testing Framework Coverage Analysis",
+    "CustomCss": "",
+    "LogoUrl": "",
+    "AdditionalMetrics": [
+      "CyclomaticComplexity",
+      "CrapScore"
+    ]
+  }
+}

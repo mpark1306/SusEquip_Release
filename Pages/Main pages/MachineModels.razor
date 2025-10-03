@@ -1,0 +1,212 @@
+@* @page "/MachineModels" *@
+@* *@
+@* @using Microsoft.Data.SqlClient *@
+@* @using SusEquip.Data.Models *@
+@* @inject DatabaseHelper DatabaseHelper *@
+@* *@
+@* <MudGrid Justify="Justify.Center" Gutter="3"> *@
+@*     <!-- Page Title & Description --> *@
+@*     <MudItem xs="12"> *@
+@*         <MudPaper Class="pa-3"> *@
+@*             <MudText Typo="Typo.h4" GutterBottom="true">Machine Models</MudText> *@
+@*             <MudText Typo="Typo.subtitle1"> *@
+@*                 This portal is for registering machine models we deliver to our users. *@
+@*             </MudText> *@
+@*             <MudText Typo="Typo.subtitle2"> *@
+@*                 These machines should be registered when we receive new or modified models. *@
+@*             </MudText> *@
+@*         </MudPaper> *@
+@*     </MudItem> *@
+@* *@
+@*     <!-- Left Side: Form --> *@
+@*     <MudItem xs="12" sm="12" md="6" lg="6"> *@
+@*         <MudCard Class="pa-3"> *@
+@*             <MudCardHeader> *@
+@*                 <MudText Typo="Typo.h6">Add Machine Model</MudText> *@
+@*             </MudCardHeader> *@
+@*             <MudCardContent> *@
+@*                 <MudForm @ref="machineModelForm" Model="machineModel"> *@
+@*                     <MudGrid Gutter="2"> *@
+@*                         <MudItem xs="12"> *@
+@*                             <MudCheckBox T="bool" Label="Modified By Personal" @bind-Value="machineModel.Modified"/> *@
+@*                             <MudCheckBox T="bool" Label="Non-Standard" @bind-Value="machineModel.NonStandard"/> *@
+@*                             <MudCheckBox T="bool" Label="GPU" @bind-Value="machineModel.Gpu"/> *@
+@*                             <MudCheckBox T="bool" Label="Dedicated Storage" @bind-Value="machineModel.DedicatedStorage"/> *@
+@* *@
+@*                         </MudItem>  *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Firm" For="@(() => machineModel.Firm)"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Model Name" For="@(() => machineModel.ModelName)"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Type" For="@(() => machineModel.Type)"/> *@
+@*                         </MudItem> *@
+@* *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="RAM" For="@(() => machineModel.Ram)"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Drive GB" For="@(() => machineModel.DriveGB)"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Drive Type" For="@(() => machineModel.DriveType)"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudCheckBox T="bool" Label="Is Touch" @bind-Value="machineModel.IsTouch"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Screen Inch" For="@(() => machineModel.ScreenInch)"/> *@
+@*                         </MudItem> *@
+@*                         <MudItem xs="12" sm="6"> *@
+@*                             <MudTextField Label="Keyboard Language" For="@(() => machineModel.KeyboardLanguage)"/> *@
+@*                         </MudItem> *@
+@* *@
+@*                         <!-- Conditional fields based on checkboxes --> *@
+@* *@
+@*                         @if (machineModel.Modified) *@
+@*                         { *@
+@*                             <MudItem xs="12"> *@
+@*                                 <MudText Typo ="Typo.body1">Modified - Yes</MudText> *@
+@*                                 <MudTextField Label="Modification Details" For="@(() => machineModel.ModSpecifics)"/> *@
+@*                             </MudItem> *@
+@*                         } *@
+@*                         @if (machineModel.NonStandard) *@
+@*                         { *@
+@*                             <MudItem xs="12"> *@
+@*                                 <MudText Typo ="Typo.body1">Is Non-Standard - Yes</MudText> *@
+@*                                 <MudTextField Label="Non-Standard Details" For="@(() => machineModel.NonStandardSpecifics)"/> *@
+@*                             </MudItem> *@
+@*                         } *@
+@*                         @if (machineModel.Gpu) *@
+@*                         { *@
+@*                             <MudItem xs="12"> *@
+@*                                 <MudText Typo ="Typo.body1">Has GPU - Yes</MudText> *@
+@*                                 <MudTextField Label="GPU Specs" For="@(() => machineModel.GpuSpecifics)"/> *@
+@*                             </MudItem> *@
+@*                         } *@
+@*                         @if (machineModel.DedicatedStorage) *@
+@*                         { *@
+@*                             <MudItem xs="12"> *@
+@*                                 <MudText Typo ="Typo.body1">Dedicated Storage - Yes</MudText> *@
+@*                                 <MudTextField Label="Storage GB" For="@(() => machineModel.StorageGB)"/> *@
+@*                                 <MudTextField Label="Storage Type" For="@(() => machineModel.StorageType)"/> *@
+@*                             </MudItem> *@
+@*                         } *@
+@* *@
+@*                         <MudItem xs="12" Class="mt-3"> *@
+@*                             <MudButton *@
+@*                                 Variant="Variant.Filled" *@
+@*                                 Color="Color.Primary" *@
+@*                                 StartIcon="@Icons.Material.Filled.Save" *@
+@*                                 OnClick="ValidateAndSubmit"> *@
+@*                                 Submit *@
+@*                             </MudButton> *@
+@*                         </MudItem> *@
+@*                     </MudGrid> *@
+@*                 </MudForm> *@
+@*             </MudCardContent> *@
+@*         </MudCard> *@
+@*     </MudItem> *@
+@* *@
+@*     <!-- Right Side: Placeholder for listing or other content --> *@
+@*     <MudItem xs="12" sm="12" md="6" lg="6"> *@
+@*         <MudPaper Class="pa-3"> *@
+@*             <MudText Typo="Typo.h5">Existing Machine Models</MudText> *@
+@*             <MudDivider Class="my-2" /> *@
+@*             <MudText Typo="Typo.body2"> *@
+@*                 <!-- Potential area to list existing records from the database --> *@
+@*                 This is where you can display machine models from the DB in a table or list. *@
+@*             </MudText> *@
+@*         </MudPaper> *@
+@*     </MudItem> *@
+@* </MudGrid> *@
+@* *@
+@* @code { *@
+@*     // Reference to your MudForm *@
+@*     private MudForm machineModelForm; *@
+@* *@
+@*     // Instance of the model you created *@
+@*     private MachineTypeModel machineModel = new(); *@
+@* *@
+@*     private void OnModifiedChanged(bool value) *@
+@*     { *@
+@*         machineModel.Modified = value; *@
+@*         StateHasChanged(); *@
+@*     } *@
+@* *@
+@*     private void OnNonStandardChanged(bool value) *@
+@*     { *@
+@*         machineModel.NonStandard = value; *@
+@*         StateHasChanged(); *@
+@*     } *@
+@* *@
+@*     private void OnGpuChanged(bool value) *@
+@*     { *@
+@*         machineModel.Gpu = value; *@
+@*         StateHasChanged(); *@
+@*     } *@
+@* *@
+@*     // The method we call on button click *@
+@*     private async Task ValidateAndSubmit() *@
+@*     { *@
+@*         // Trigger MudBlazor to validate all fields in machineModel *@
+@*         await machineModelForm.Validate(); *@
+@* *@
+@*         if (!machineModelForm.IsValid) *@
+@*         { *@
+@*             // The form fields did not pass validation *@
+@*             // Handle errors (e.g., show a message, highlight invalid fields, etc.) *@
+@*             return; *@
+@*         } *@
+@* *@
+@*         // If we reach this point, the form is valid *@
+@*         // Performs insert (or update) logic here *@
+@*         await InsertMachineModel(); *@
+@*     } *@
+@* *@
+@*     // Example: Insert logic *@
+@*     private async Task InsertMachineModel() *@
+@*     { *@
+@*         var query = @" *@
+@*             INSERT INTO MachineModels *@
+@*             ( *@
+@*                 firm, modelName, type, modified, mod_Specifics, *@
+@*                 non_Standard, non_StandardSpecifics, ram, gpu, gpu_Specifics, *@
+@*                 drive_GB, drive_Type, storage_GB, storage_Type, is_Touch, *@
+@*                 screen_Inch, keyboard_Language, dedicated_Storage *@
+@*             ) *@
+@*             VALUES *@
+@*             ( *@
+@*                 @Firm, @ModelName, @Type, @Modified, @ModSpecifics, *@
+@*                 @NonStandard, @NonStandardSpecifics, @Ram, @Gpu, @GpuSpecifics, *@
+@*                 @DriveGB, @DriveType, @StorageGB, @StorageType, @IsTouch, *@
+@*                 @ScreenInch, @KeyboardLanguage, @DedicatedStorage *@
+@*             )"; *@
+@* *@
+@*         var parameters = new[] *@
+@*         { *@
+@*             new SqlParameter("@Firm", machineModel.Firm), *@
+@*             new SqlParameter("@ModelName", machineModel.ModelName), *@
+@*             new SqlParameter("@Type", machineModel.Type), *@
+@*             new SqlParameter("@Modified", machineModel.Modified ? 1 : 0), *@
+@*             new SqlParameter("@ModSpecifics", machineModel.ModSpecifics ?? (object)DBNull.Value), *@
+@*             new SqlParameter("@NonStandard", machineModel.NonStandard ? 1 : 0), *@
+@*             new SqlParameter("@NonStandardSpecifics", machineModel.NonStandardSpecifics ?? (object)DBNull.Value), *@
+@*             new SqlParameter("@Ram", machineModel.Ram), *@
+@*             new SqlParameter("@Gpu", machineModel.Gpu ? 1 : 0), *@
+@*             new SqlParameter("@GpuSpecifics", machineModel.GpuSpecifics ?? (object)DBNull.Value), *@
+@*             new SqlParameter("@DriveGB", machineModel.DriveGB), *@
+@*             new SqlParameter("@DriveType", machineModel.DriveType), *@
+@*             new SqlParameter("@StorageGB", machineModel.StorageGB.HasValue ? machineModel.StorageGB.Value : (object)DBNull.Value), *@
+@*             new SqlParameter("@StorageType", machineModel.StorageType ?? (object)DBNull.Value), *@
+@*             new SqlParameter("@IsTouch", machineModel.IsTouch ? 1 : 0), *@
+@*             new SqlParameter("@ScreenInch", machineModel.ScreenInch), *@
+@*             new SqlParameter("@KeyboardLanguage", machineModel.KeyboardLanguage), *@
+@*             new SqlParameter("@DedicatedStorage", machineModel.DedicatedStorage ? 1 : 0) *@
+@*         }; *@
+@* *@
+@*         await DatabaseHelper.ExecuteQueryAsync(query, parameters); *@
+@*     } *@
+@* } *@

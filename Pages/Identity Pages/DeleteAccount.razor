@@ -1,0 +1,23 @@
+﻿@* @page "/DeleteAccount"
+@inject NavigationManager NavigationManager
+
+<PageTitle>DeleteAccount</PageTitle>
+
+<MudContainer>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudAlert Severity="Severity.Normal">Please use the database if you want to delete your account.</MudAlert>
+            <br>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Return">Return to Profile</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
+
+@{
+    void Return()
+    {
+        NavigationManager.NavigateTo("/Profile");
+    }
+} *@

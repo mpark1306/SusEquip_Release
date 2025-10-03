@@ -1,0 +1,282 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject SusEquip.Data.Services.EquipmentService EquipmentService
+@inject IJSRuntime JSRuntime
+@using SusEquip.Pages.Main_pages
+@using SusEquip.Data.Interfaces.Services
+@inject ICookieService CookieService
+
+<CascadingValue Value="this">
+    <MudPopoverProvider />
+    <MudThemeProvider Theme="@CurrentTheme" IsDarkMode="@_isDarkMode" />
+    <MudDialogProvider FullWidth="true"
+                       MaxWidth="MaxWidth.Large"
+                       CloseButton="true"
+                       NoHeader="true"
+                       Position="DialogPosition.Center"
+                       CloseOnEscapeKey="true" />
+    <MudSnackbarProvider />
+
+    <MudLayout>
+        <MudSpacer />
+        <MudAppBar Elevation="0">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+            <MudText Typo="Typo.h4" Color="Color.Dark">
+                <MudLink Href="/" Typo="Typo.h4" Color="Color.Primary">SusEquip</MudLink>
+            </MudText>
+            <MudSpacer />
+            <MudToggleIconButton @bind-Toggled="@_isDarkMode"
+                                 Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Inherit" Title="Switch to Dark Mode"
+                                 ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Inherit" ToggledTitle="Switch to Light Mode" />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Inherit" OnClick="@CycleTheme" />
+        </MudAppBar>
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+            <NavMenu />
+        </MudDrawer>
+
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+</CascadingValue>
+
+@code {
+    bool _drawerOpen = false;
+    bool _isDarkMode = false;
+    MudTheme CurrentTheme = new MudTheme();
+    int _currentThemeIndex = 0;
+    MudTheme[] _themes = Array.Empty<MudTheme>();
+
+    protected override void OnInitialized()
+    {
+        _themes = new MudTheme[]
+        {
+            GreenLightTheme,
+            GreenDarkTheme,
+            ReneLightTheme,
+            ReneDarkTheme,
+            BlueLightTheme,
+            BlueDarkTheme,
+        };
+        CurrentTheme = GreenLightTheme; // Set default theme
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadSettings();
+            StateHasChanged();
+        }
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task CycleTheme()
+    {
+        _currentThemeIndex = (_currentThemeIndex + 1) % _themes.Length;
+        CurrentTheme = _themes[_currentThemeIndex];
+        
+        // Update _isDarkMode based on the selected theme
+        var themeName = GetCurrentThemeName();
+        _isDarkMode = themeName.Contains("Dark");
+        
+        await SaveSettings();
+        StateHasChanged();
+    }
+
+    public async Task SetTheme(string themeName)
+    {
+        switch (themeName)
+        {
+            case "GreenLightTheme":
+                CurrentTheme = GreenLightTheme;
+                _currentThemeIndex = 0;
+                break;
+            case "GreenDarkTheme":
+                CurrentTheme = GreenDarkTheme;
+                _currentThemeIndex = 1;
+                break;
+            case "ReneLightTheme":
+                CurrentTheme = ReneLightTheme;
+                _currentThemeIndex = 2;
+                break;
+            case "ReneDarkTheme":
+                CurrentTheme = ReneDarkTheme;
+                _currentThemeIndex = 3;
+                break;
+            case "BlueLightTheme":
+                CurrentTheme = BlueLightTheme;
+                _currentThemeIndex = 4;
+                break;
+            case "BlueDarkTheme":
+                CurrentTheme = BlueDarkTheme;
+                _currentThemeIndex = 5;
+                break;
+            default:
+                CurrentTheme = GreenLightTheme;
+                _currentThemeIndex = 0;
+                break;
+        }
+        await SaveSettings();
+        StateHasChanged();
+    }
+
+    private string GetCurrentThemeName()
+    {
+        return _currentThemeIndex switch
+        {
+            0 => "GreenLightTheme",
+            1 => "GreenDarkTheme",
+            2 => "ReneLightTheme",
+            3 => "ReneDarkTheme",
+            4 => "BlueLightTheme",
+            5 => "BlueDarkTheme",
+            _ => "GreenLightTheme"
+        };
+    }
+
+    private async Task SaveSettings()
+    {
+        var themeName = GetCurrentThemeName();
+        await CookieService.SetCookieAsync("User_Theme", themeName, 60);
+    }
+
+    private async Task LoadSettings()
+    {
+        var username = await CookieService.GetCookieAsync("Creator_Initials");
+        var theme = await CookieService.GetCookieAsync("User_Theme") ?? "GreenLightTheme";
+        
+        // Set _isDarkMode based on the theme name
+        _isDarkMode = theme.Contains("Dark");
+        
+        // Apply the theme
+        await SetTheme(theme);
+        StateHasChanged();
+    }
+
+    MudTheme GreenLightTheme = new MudTheme()
+        {
+            PaletteLight = new PaletteLight()
+            {
+                Primary = Colors.Green.Accent4,
+                Secondary = Colors.DeepPurple.Accent2,
+                AppbarBackground = Colors.Green.Accent4,
+                Background = Colors.Gray.Lighten5,
+                DrawerBackground = Colors.Green.Accent4,
+                TextPrimary = Colors.Gray.Darken4,
+                TextSecondary = Colors.Gray.Darken2,
+            },
+            LayoutProperties = new LayoutProperties()
+            {
+                DrawerWidthLeft = "260px",
+                DrawerWidthRight = "300px"
+            }
+        };
+
+    MudTheme GreenDarkTheme = new MudTheme()
+        {
+            PaletteDark = new PaletteDark()
+            {
+                Primary = Colors.Green.Accent3,
+                Secondary = Colors.DeepPurple.Accent2,
+                AppbarBackground = Colors.Gray.Darken4,
+                Background = Colors.Gray.Darken4,
+                DrawerBackground = Colors.Gray.Darken3,
+                DrawerText = Colors.Shades.White,
+                TextPrimary = Colors.Shades.White,
+                TextSecondary = Colors.Gray.Lighten1,
+                Surface = Colors.Gray.Darken3,
+            },
+            LayoutProperties = new LayoutProperties()
+            {
+                DrawerWidthLeft = "260px",
+                DrawerWidthRight = "300px"
+            }
+        };
+
+    MudTheme ReneLightTheme = new MudTheme()
+        {
+            PaletteLight = new PaletteLight()
+            {
+                Primary = Colors.DeepPurple.Accent2,
+                Secondary = Colors.Green.Accent4,
+                AppbarBackground = Colors.DeepPurple.Accent2,
+                Background = Colors.Gray.Lighten5,
+                DrawerBackground = Colors.DeepPurple.Accent2,
+                TextPrimary = Colors.Gray.Darken4,
+                TextSecondary = Colors.Gray.Darken2,
+            },
+            LayoutProperties = new LayoutProperties()
+            {
+                DrawerWidthLeft = "260px",
+                DrawerWidthRight = "300px"
+            }
+        };
+
+    MudTheme ReneDarkTheme = new MudTheme()
+        {
+            PaletteDark = new PaletteDark()
+            {
+                Primary = Colors.DeepPurple.Accent2,
+                Secondary = Colors.Green.Accent4,
+                AppbarBackground = Colors.Gray.Darken4,
+                Background = Colors.Gray.Darken4,
+                DrawerBackground = Colors.Gray.Darken3,
+                DrawerText = Colors.Shades.White,
+                TextPrimary = Colors.Shades.White,
+                TextSecondary = Colors.Gray.Lighten1,
+                Surface = Colors.Gray.Darken3,
+            },
+            LayoutProperties = new LayoutProperties()
+            {
+                DrawerWidthLeft = "260px",
+                DrawerWidthRight = "300px"
+            }
+        };
+
+    MudTheme BlueLightTheme = new MudTheme()
+        {
+            PaletteLight = new PaletteLight()
+            {
+                Primary = Colors.Blue.Accent4,
+                Secondary = Colors.DeepPurple.Accent2,
+                AppbarBackground = Colors.Blue.Accent4,
+                Background = Colors.Gray.Lighten5,
+                DrawerBackground = Colors.Blue.Accent4,
+                TextPrimary = Colors.Gray.Darken4,
+                TextSecondary = Colors.Gray.Darken2,
+            },
+            LayoutProperties = new LayoutProperties()
+            {
+                DrawerWidthLeft = "260px",
+                DrawerWidthRight = "300px"
+            }
+        };
+
+    MudTheme BlueDarkTheme = new MudTheme()
+        {
+            PaletteDark = new PaletteDark()
+            {
+                Primary = Colors.Blue.Accent3,
+                Secondary = Colors.DeepPurple.Accent2,
+                AppbarBackground = Colors.Gray.Darken4,
+                Background = Colors.Gray.Darken4,
+                DrawerBackground = Colors.Gray.Darken3,
+                DrawerText = Colors.Shades.White,
+                TextPrimary = Colors.Shades.White,
+                TextSecondary = Colors.Gray.Lighten1,
+                Surface = Colors.Gray.Darken3,
+            },
+            LayoutProperties = new LayoutProperties()
+            {
+                DrawerWidthLeft = "260px",
+                DrawerWidthRight = "300px"
+            }
+        };
+}

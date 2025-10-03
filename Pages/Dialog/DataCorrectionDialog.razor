@@ -1,0 +1,363 @@
+@using MudBlazor
+@using SusEquip.Data.Models
+@using SusEquip.Data.Services
+@using SusEquip.Data.Utilities
+@using SusEquip.Data.Interfaces.Services
+@inject IDataValidationService ValidationService
+@inject EquipmentService EquipmentService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ICookieService CookieService
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Class="pa-4">
+            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); color: white; border-radius: 8px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Align="Align.Center">Data Correction Preview</MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        Review and confirm the proposed changes
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <MudGrid>
+                <!-- Issue Information -->
+                <MudItem xs="12">
+                    <MudCard Elevation="2" Class="mb-4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@GetSeverityIcon(Issue.Severity)" Color="@GetSeverityColor(Issue.Severity)" />
+                                    <MudText Typo="Typo.h6">@Issue.IssueType</MudText>
+                                    <MudChip T="string" Color="@GetSeverityColor(Issue.Severity)" Size="Size.Small">@Issue.Severity</MudChip>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudText><strong>Equipment:</strong> @Issue.PCName (Inst No: @Issue.InstNo)</MudText>
+                                <MudText><strong>Field:</strong> @Issue.FieldName</MudText>
+                                <MudText><strong>Reason:</strong> @Issue.Reason</MudText>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Before/After Comparison -->
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2" Style="border-left: 4px solid #f44336;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Remove" Color="Color.Error" />
+                                    <MudText Typo="Typo.h6" Color="Color.Error">Current Value</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudPaper Elevation="1" Class="pa-3" Style="background-color: #ffebee;">
+                                <MudText Color="Color.Error" Style="font-family: monospace; word-break: break-all;">
+                                    @(string.IsNullOrWhiteSpace(Issue.CurrentValue) ? "(Empty)" : Issue.CurrentValue)
+                                </MudText>
+                            </MudPaper>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2" Style="border-left: 4px solid #4caf50;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Success" />
+                                    <MudText Typo="Typo.h6" Color="Color.Success">Proposed Value</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            @if (IsEditing)
+                            {
+                                <MudTextField @bind-Value="CustomValue" 
+                                            Label="Custom Value" 
+                                            Variant="Variant.Outlined" 
+                                            FullWidth="true"
+                                            HelperText="Enter your custom correction value" />
+                            }
+                            else
+                            {
+                                <MudPaper Elevation="1" Class="pa-3" Style="background-color: #e8f5e8;">
+                                    <MudText Color="Color.Success" Style="font-family: monospace; word-break: break-all;">
+                                        @(string.IsNullOrWhiteSpace(Issue.SuggestedValue) ? "(Empty)" : Issue.SuggestedValue)
+                                    </MudText>
+                                </MudPaper>
+                            }
+                            
+                            <MudStack Row Justify="Justify.FlexEnd" Class="mt-2">
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary" 
+                                          Size="Size.Small"
+                                          OnClick="ToggleCustomValue">
+                                    @(IsEditing ? "Use Suggested" : "Use Custom Value")
+                                </MudButton>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Correction Details -->
+                <MudItem xs="12">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Assignment" />
+                                    <MudText Typo="Typo.h6">Correction Details</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="3">
+                                <MudTextField @bind-Value="CorrectorInitials" 
+                                            Label="Your Initials" 
+                                            Variant="Variant.Outlined" 
+                                            Required="true"
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                                <MudTextField @bind-Value="AppOwner" 
+                                            Label="App Owner/Responsible Person" 
+                                            Variant="Variant.Outlined" 
+                                            Required="true"
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.AccountCircle" />
+
+                                <MudTextField @bind-Value="CorrectionReason" 
+                                            Label="Reason for Correction" 
+                                            Variant="Variant.Outlined" 
+                                            Lines="3"
+                                            Placeholder="Explain why this correction is needed..."
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.Description" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Color="Color.Default"
+                   Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="ConfirmCorrection" 
+                   Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Check"
+                   Disabled="@(!IsFormValid())">
+            Apply Correction
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ValidationIssue Issue { get; set; } = null!;
+
+    private string CorrectorInitials = string.Empty;
+    private string AppOwner = string.Empty;
+    private string CorrectionReason = string.Empty;
+    private string CustomValue = string.Empty;
+    private bool IsEditing = false;
+    private bool _firstRender = true;
+    private bool hasRendered = false;
+
+    protected override void OnInitialized()
+    {
+        CustomValue = Issue.SuggestedValue;
+        
+        // Pre-populate app owner from the equipment data if available
+        if (Issue.EquipmentData != null && !string.IsNullOrWhiteSpace(Issue.EquipmentData.App_Owner))
+        {
+            AppOwner = Issue.EquipmentData.App_Owner;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _firstRender && !hasRendered)
+        {
+            _firstRender = false;
+            hasRendered = true;
+            try
+            {
+                // Pre-populate with user's initials from cookies if available
+                CorrectorInitials = await CookieService.GetCookieAsync("Creator_Initials") ?? string.Empty;
+                StateHasChanged(); // Trigger re-render to show the populated initials
+            }
+            catch (Exception)
+            {
+                // If cookie service fails, just leave initials empty
+                CorrectorInitials = string.Empty;
+            }
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private string GetFinalValue()
+    {
+        return IsEditing ? CustomValue : Issue.SuggestedValue;
+    }
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(CorrectorInitials) &&
+               !string.IsNullOrWhiteSpace(AppOwner) &&
+               !string.IsNullOrWhiteSpace(GetFinalValue());
+    }
+
+    private void ToggleCustomValue()
+    {
+        if (IsEditing)
+        {
+            // Switching back to suggested value
+            CustomValue = Issue.SuggestedValue;
+            IsEditing = false;
+        }
+        else
+        {
+            // Switching to custom value
+            CustomValue = Issue.SuggestedValue;
+            IsEditing = true;
+        }
+    }
+
+    private async Task ConfirmCorrection()
+    {
+        if (!IsFormValid())
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var finalValue = GetFinalValue();
+            
+            // Create the correction log entry
+            var correction = new DataCorrection
+            {
+                EntryId = Issue.EntryId,
+                InstNo = Issue.InstNo,
+                FieldName = Issue.FieldName,
+                OldValue = Issue.CurrentValue,
+                NewValue = finalValue,
+                CorrectorInitials = CorrectorInitials,
+                AppOwner = AppOwner,
+                Reason = CorrectionReason,
+                IssueType = Issue.IssueType,
+                IsApproved = true // Auto-approve for now, could add approval workflow later
+            };
+
+            // Log the correction
+            ValidationService.LogCorrection(correction);
+
+            // Log the issue as solved
+            ValidationService.LogSolvedIssue(Issue, CorrectorInitials, "Manual Correction", CorrectionReason);
+
+            // Apply the actual correction to the equipment data
+            await ApplyCorrection(Issue.EquipmentData!, Issue.FieldName, finalValue);
+
+            Snackbar.Add("Correction applied successfully!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(correction));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error applying correction: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ApplyCorrection(EquipmentData equipment, string fieldName, string newValue)
+    {
+        // Update the existing equipment entry with the corrected value
+        var correctedEquipment = new EquipmentData
+        {
+            EntryId = equipment.EntryId, // Keep the same EntryId for update
+            Entry_Date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            Inst_No = equipment.Inst_No,
+            Creator_Initials = CorrectorInitials,
+            App_Owner = AppOwner,
+            Status = equipment.Status,
+            Serial_No = equipment.Serial_No,
+            Mac_Address1 = equipment.Mac_Address1,
+            Mac_Address2 = equipment.Mac_Address2,
+            UUID = equipment.UUID,
+            Product_No = equipment.Product_No,
+            Model_Name_and_No = equipment.Model_Name_and_No,
+            Department = equipment.Department,
+            PC_Name = equipment.PC_Name,
+            Service_Start = equipment.Service_Start,
+            Service_Ends = equipment.Service_Ends,
+            Note = equipment.Note + $" [Corrected: {Issue.IssueType}]",
+            MachineType = equipment.MachineType
+        };
+
+        // Apply the specific field correction
+        switch (fieldName)
+        {
+            case "Status":
+                correctedEquipment.Status = newValue;
+                break;
+            case "PC_Name":
+                correctedEquipment.PC_Name = newValue;
+                break;
+            case "Mac_Address1":
+                correctedEquipment.Mac_Address1 = newValue;
+                break;
+            case "UUID":
+                correctedEquipment.UUID = newValue;
+                break;
+            case "App_Owner":
+                correctedEquipment.App_Owner = newValue;
+                break;
+            case "Service_Ends":
+                correctedEquipment.Service_Ends = newValue;
+                break;
+            default:
+                throw new ArgumentException($"Field correction not implemented for: {fieldName}");
+        }
+
+        // Update the existing entry instead of creating a new one
+        EquipmentService.UpdateLatestEntry(correctedEquipment);
+        
+        // Log the solved issue
+        ValidationService.LogSolvedIssue(Issue, CorrectorInitials, "Manual Correction", $"Field '{fieldName}' corrected from '{Issue.CurrentValue}' to '{newValue}'");
+    }
+
+    private string GetSeverityIcon(string severity)
+    {
+        return severity switch
+        {
+            "High" => Icons.Material.Filled.Error,
+            "Medium" => Icons.Material.Filled.Warning,
+            "Low" => Icons.Material.Filled.Info,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private Color GetSeverityColor(string severity)
+    {
+        return severity switch
+        {
+            "High" => Color.Error,
+            "Medium" => Color.Warning,
+            "Low" => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

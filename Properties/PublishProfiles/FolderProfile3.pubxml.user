@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>\\SUS-PEQUIP01\SusEquipTest</_PublishTargetUrl>
+    <History>False|2025-04-03T08:19:36.2014418Z||;False|2025-04-03T09:44:17.3540968+02:00||;False|2025-04-03T09:43:58.1473708+02:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="DefaultConnection">
+      <Value>Data Source=sus-pequip01\EQUIPDB%3bInitial Catalog=Equip2%3bUser Id=sa%3bPassword=NoCakeForMe1306%3bConnect Timeout=120%3bEncrypt=True%3b TrustServerCertificate=True%3b</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+</Project>

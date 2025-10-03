@@ -1,0 +1,188 @@
+﻿@page "/UserSettings"
+@using SusEquip.Data.Services
+@using SusEquip.Data.Interfaces.Services
+@inject ICookieService CookieService
+@inject NavigationManager NavigationManager
+@inherits LayoutComponentBase
+
+<PageTitle>User Settings</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-6">
+    <!-- Header Section -->
+    <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">
+        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" />
+            <MudText Typo="Typo.h4" Align="Align.Center">
+                User Settings
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                Customize your preferences and profile
+            </MudText>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Main Settings Card -->
+    <MudCard Elevation="4" Style="border-radius: 12px;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">Profile & Preferences</MudText>
+                </MudStack>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pa-6">
+            <MudStack Spacing="4">
+                <!-- Username Field -->
+                <MudTextField @bind-Value="username" 
+                            Label="Username" 
+                            Placeholder="Enter your username" 
+                            Variant="Variant.Outlined"
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Person"
+                            HelperText="This will be used as your creator initials" />
+
+                <!-- Divider for Appearance Settings -->
+                <MudDivider />
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Palette" Class="mr-2" />
+                    Appearance Settings
+                </MudText>
+
+                <!-- Theme Selection -->
+                <MudSelect T="string" 
+                         Value="theme" 
+                         Label="Theme" 
+                         Placeholder="Select Theme" 
+                         Variant="Variant.Outlined"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.ColorLens"
+                         HelperText="Choose your preferred color theme"
+                         Immediate="true"
+                         ValueChanged="OnThemeChanged">
+                    @foreach (var availableTheme in availableThemes)
+                    {
+                        <MudSelectItem Value="@availableTheme">@GetThemeDisplayName(availableTheme)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudStack>
+        </MudCardContent>
+
+        <!-- Action Buttons -->
+        <MudCardActions Class="pa-6 pt-0">
+            <MudStack Row Justify="Justify.FlexEnd" Spacing="3" Style="width: 100%;">
+                <MudButton OnClick="ResetSettings" 
+                         Color="Color.Default" 
+                         Variant="Variant.Text"
+                         StartIcon="@Icons.Material.Filled.Restore">
+                    Reset to Default
+                </MudButton>
+                <MudButton OnClick="SaveSettings" 
+                         Color="Color.Primary" 
+                         Variant="Variant.Filled"
+                         StartIcon="@Icons.Material.Filled.Save">
+                    Save Settings
+                </MudButton>
+            </MudStack>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string username = string.Empty;
+    private string theme = string.Empty;
+    private string[] availableThemes = { "GreenLightTheme", "GreenDarkTheme", "ReneLightTheme", "ReneDarkTheme", "BlueLightTheme", "BlueDarkTheme" };
+
+    [CascadingParameter] public dynamic? Layout { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadSettings();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnThemeChanged(string newTheme)
+    {
+        theme = newTheme;
+        await ApplyThemeChanges();
+        StateHasChanged();
+    }
+
+    private async Task ApplyThemeChanges()
+    {
+        if (Layout != null)
+        {
+            try
+            {
+                await Layout.SetTheme(theme);
+            }
+            catch (Exception)
+            {
+                // Error setting layout properties
+            }
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        try
+        {
+            await CookieService.SetCookieAsync("Creator_Initials", username ?? string.Empty, 60);
+            await CookieService.SetCookieAsync("User_Theme", theme ?? string.Empty, 60);
+            
+            await ApplyThemeChanges();
+
+            // Show success message
+            // Note: You might want to inject ISnackbar for better user feedback
+        }
+        catch (Exception)
+        {
+            // Handle errors appropriately
+        }
+    }
+
+    private async Task LoadSettings()
+    {
+        try
+        {
+            username = await CookieService.GetCookieAsync("Creator_Initials") ?? string.Empty;
+            theme = await CookieService.GetCookieAsync("User_Theme") ?? "GreenLightTheme";
+            
+            // Apply the loaded settings to ensure they're in sync
+            await ApplyThemeChanges();
+        }
+        catch (Exception)
+        {
+            // Handle errors appropriately
+            // Set defaults
+            username = string.Empty;
+            theme = "GreenLightTheme";
+        }
+    }
+
+    private async Task ResetSettings()
+    {
+        username = string.Empty;
+        theme = "GreenLightTheme";
+        
+        await SaveSettings();
+        StateHasChanged();
+    }
+
+    private string GetThemeDisplayName(string themeName)
+    {
+        return themeName switch
+        {
+            "GreenLightTheme" => "Green Light",
+            "GreenDarkTheme" => "Green Dark",
+            "ReneLightTheme" => "Rene Light",
+            "ReneDarkTheme" => "Rene Dark",
+            "BlueLightTheme" => "Blue Light",
+            "BlueDarkTheme" => "Blue Dark",
+            _ => themeName
+        };
+    }
+}

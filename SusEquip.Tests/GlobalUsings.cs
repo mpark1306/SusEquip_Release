@@ -1,0 +1,9 @@
+global using Xunit;
+global using SusEquip.Data.Interfaces.Services;
+global using Microsoft.Extensions.Logging;
+global using Moq;
+global using SusEquip.Tests.Infrastructure;
+global using SusEquip.Data.Services.ErrorHandling;
+global using SusEquip.Data.Models;
+global using FluentAssertions;
+global using Microsoft.Extensions.DependencyInjection;

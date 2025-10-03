@@ -1,0 +1,96 @@
+﻿@* @page "/Profile"
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject NavigationManager NavigationManager
+@using System.Security.Principal
+
+<link href="css/custom.css" rel="stylesheet" />
+
+
+<PageTitle>Profile</PageTitle>
+
+<MudContainer>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <br />
+            <MudText Align="Align.Center" Typo="Typo.h5" GutterBottom="true">  Your Profile</MudText>
+            <MudText Align="Align.Center" Class="mb-8">Welcome to SUS Equip, <b>@username</b>!</MudText>
+
+            @if (user != null)
+            {
+                <MudCard>
+                    <MudCardContent>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <MudText Typo="Typo.subtitle2">Username:</MudText>
+                                <MudText Typo="Typo.subtitle2">Email:</MudText>
+                            </div>
+                            <MudDivider Vertical="true" Color="Color.Grey" Class="mx-4" />
+                            <div>
+                                <MudText Typo="Typo.body1"><b> @username</b></MudText>
+                                <MudText Typo="Typo.body1"><b> @user.Email</b></MudText>
+                            </div>
+                        </div>
+                        @*  <!-- Optionally, include more details like Register Time and Login History -->
+                    <!-- <MudText Typo="Typo.subtitle1">Register Time:</MudText>
+                    <MudText Typo="Typo.body1">@user.RegisterTime.ToString("g")</MudText>
+                    <MudText Typo="Typo.subtitle1">Login History:</MudText>
+                    <MudText Typo="Typo.body1">@string.Join(", ", user.LoginHistory)</MudText> --> *@
+                    </MudCardContent>
+                </MudCard>
+            }
+            <br />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="small-font"  OnClick="ChangePassword">Change Password</MudButton>
+            <br />
+            <br />
+            <MudButton Variant="Variant.Filled" Color="Color.Dark" Class="small-font" OnClick="DeleteAccount">Delete Account</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private IdentityUser user;
+
+    private string username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the current user's information
+        var fullName = WindowsIdentity.GetCurrent().Name;
+        var parts = fullName.Split('\\');
+        username = parts[parts.Length - 1];
+        var userEmail = $"{username}@dtu.dk";
+
+        // want to fetch a user by their email, you should use the UserManager.FindByEmailAsync method instead.
+        // This method is designed to find a user by their email address and returns an IdentityUser object.
+        var user = await UserManager.FindByEmailAsync(userEmail);
+        if (user != null)
+        {
+            this.user = user;
+        }
+        else
+        {
+            // User not found
+        }
+        // Assuming you want to fetch additional info like RegisterTime and LoginHistory
+        // You would need to implement methods to fetch these from your database or another source
+    }
+
+    private async Task ChangePassword()
+    {
+        NavigationManager.NavigateTo("/changepassword");
+    }
+
+    private async Task DeleteAccount()
+    {
+        NavigationManager.NavigateTo("/deleteaccount");
+    }
+
+    // Placeholder for fetching user info
+    private async Task<IdentityUser> GetUser(string userEmail)
+    {
+        // Implement fetching user info from database
+        return await UserManager.FindByEmailAsync(userEmail);
+    }
+} *@

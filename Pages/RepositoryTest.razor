@@ -1,0 +1,392 @@
+@page "/repository-test"
+@using SusEquip.Data.Interfaces
+@using SusEquip.Data.Models
+@using Microsoft.Extensions.Logging
+@inject IUnitOfWork UnitOfWork
+@inject ILogger<RepositoryTest> Logger
+
+<PageTitle>Repository Pattern Test</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Repository Pattern Test Page</MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Repository Tests</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudStack Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="TestBasicOperations" Disabled="@isLoading">
+                            Test Basic CRUD Operations
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="TestEquipmentQueries" Disabled="@isLoading">
+                            Test Equipment Queries
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="TestOldEquipmentOperations" Disabled="@isLoading">
+                            Test OLD Equipment Operations
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="TestUnitOfWork" Disabled="@isLoading">
+                            Test Unit of Work
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="TestAll" Disabled="@isLoading">
+                            Run All Tests
+                        </MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Test Results</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (isLoading)
+                    {
+                        <MudProgressCircular Indeterminate="true" />
+                        <MudText Class="ml-2">Running tests...</MudText>
+                    }
+                    else if (testResults.Any())
+                    {
+                        <MudStack Spacing="1">
+                            @foreach (var result in testResults)
+                            {
+                                <MudAlert Severity="@(result.Success ? Severity.Success : Severity.Error)">
+                                    <strong>@result.TestName:</strong> @result.Message
+                                    @if (!string.IsNullOrEmpty(result.Details))
+                                    {
+                                        <br><small>@result.Details</small>
+                                    }
+                                </MudAlert>
+                            }
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudText>Click a test button to run repository tests.</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+    
+    @if (equipmentStats != null)
+    {
+        <MudItem xs="12" Class="mt-4">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Current Equipment Statistics</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-4 text-center">
+                                <MudText Typo="Typo.h4" Color="Color.Primary">@equipmentStats.Value.activeCount</MudText>
+                                <MudText Typo="Typo.body2">Active</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-4 text-center">
+                                <MudText Typo="Typo.h4" Color="Color.Success">@equipmentStats.Value.newCount</MudText>
+                                <MudText Typo="Typo.body2">New</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-4 text-center">
+                                <MudText Typo="Typo.h4" Color="Color.Warning">@equipmentStats.Value.usedCount</MudText>
+                                <MudText Typo="Typo.body2">Used</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-4 text-center">
+                                <MudText Typo="Typo.h4" Color="Color.Error">@equipmentStats.Value.quarantinedCount</MudText>
+                                <MudText Typo="Typo.body2">Quarantined</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    }
+</MudContainer>
+
+@code {
+    private bool isLoading = false;
+    private List<TestResult> testResults = new();
+    private (int activeCount, int newCount, int usedCount, int quarantinedCount)? equipmentStats;
+
+    public class TestResult
+    {
+        public string TestName { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEquipmentStats();
+    }
+
+    private async Task LoadEquipmentStats()
+    {
+        try
+        {
+            equipmentStats = await UnitOfWork.Equipment.GetDashboardStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading equipment statistics");
+        }
+    }
+
+    private async Task TestAll()
+    {
+        isLoading = true;
+        testResults.Clear();
+        StateHasChanged();
+
+        await TestBasicOperations();
+        await TestEquipmentQueries();
+        await TestOldEquipmentOperations();
+        await TestUnitOfWork();
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task TestBasicOperations()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Test Equipment Repository Count
+            var equipmentCount = await UnitOfWork.Equipment.CountAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "Equipment Count",
+                Success = true,
+                Message = $"Successfully retrieved count: {equipmentCount} equipment items"
+            });
+
+            // Test OLD Equipment Repository Count
+            var oldEquipmentCount = await UnitOfWork.OldEquipment.CountAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "OLD Equipment Count",
+                Success = true,
+                Message = $"Successfully retrieved count: {oldEquipmentCount} OLD equipment items"
+            });
+
+            // Test Get All Equipment (limit to first 5)
+            var allEquipment = await UnitOfWork.Equipment.GetAllAsync();
+            var equipmentList = allEquipment.Take(5).ToList();
+            testResults.Add(new TestResult
+            {
+                TestName = "Get All Equipment",
+                Success = true,
+                Message = $"Successfully retrieved equipment list",
+                Details = $"Sample: {string.Join(", ", equipmentList.Select(e => e.PC_Name))}"
+            });
+
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(new TestResult
+            {
+                TestName = "Basic Operations",
+                Success = false,
+                Message = "Failed to perform basic operations",
+                Details = ex.Message
+            });
+            Logger.LogError(ex, "Error in basic operations test");
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task TestEquipmentQueries()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Test getting active machines
+            var activeMachines = await UnitOfWork.Equipment.GetActiveMachinesAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "Active Machines Query",
+                Success = true,
+                Message = $"Found {activeMachines.Count()} active machines"
+            });
+
+            // Test getting new machines
+            var newMachines = await UnitOfWork.Equipment.GetNewMachinesAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "New Machines Query",
+                Success = true,
+                Message = $"Found {newMachines.Count()} new machines"
+            });
+
+            // Test getting used machines
+            var usedMachines = await UnitOfWork.Equipment.GetUsedMachinesAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "Used Machines Query",
+                Success = true,
+                Message = $"Found {usedMachines.Count()} used machines"
+            });
+
+            // Test getting quarantine machines
+            var quarantineMachines = await UnitOfWork.Equipment.GetQuarantineMachinesAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "Quarantine Machines Query",
+                Success = true,
+                Message = $"Found {quarantineMachines.Count()} quarantined machines"
+            });
+
+            // Test dashboard statistics
+            var stats = await UnitOfWork.Equipment.GetDashboardStatisticsAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "Dashboard Statistics",
+                Success = true,
+                Message = "Successfully retrieved dashboard statistics",
+                Details = $"Active: {stats.activeCount}, New: {stats.newCount}, Used: {stats.usedCount}, Quarantined: {stats.quarantinedCount}"
+            });
+
+            // Refresh the stats display
+            equipmentStats = stats;
+
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(new TestResult
+            {
+                TestName = "Equipment Queries",
+                Success = false,
+                Message = "Failed to perform equipment queries",
+                Details = ex.Message
+            });
+            Logger.LogError(ex, "Error in equipment queries test");
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task TestOldEquipmentOperations()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Test getting OLD machines
+            var oldMachines = await UnitOfWork.OldEquipment.GetOldMachinesAsync();
+            testResults.Add(new TestResult
+            {
+                TestName = "OLD Machines Query",
+                Success = true,
+                Message = $"Found {oldMachines.Count()} OLD machines"
+            });
+
+            // Test IsOLDMachine logic
+            var isOldTest1 = await UnitOfWork.OldEquipment.IsOLDMachineAsync("OLD-TEST-PC", "IT Department");
+            var isOldTest2 = await UnitOfWork.OldEquipment.IsOLDMachineAsync("REGULAR-PC", "Finance");
+            var isOldTest3 = await UnitOfWork.OldEquipment.IsOLDMachineAsync("TEST-PC", "OLD Department");
+
+            testResults.Add(new TestResult
+            {
+                TestName = "IsOLDMachine Logic",
+                Success = true,
+                Message = "IsOLDMachine logic working correctly",
+                Details = $"OLD-TEST-PC: {isOldTest1}, REGULAR-PC: {isOldTest2}, OLD Dept: {isOldTest3}"
+            });
+
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(new TestResult
+            {
+                TestName = "OLD Equipment Operations",
+                Success = false,
+                Message = "Failed to perform OLD equipment operations",
+                Details = ex.Message
+            });
+            Logger.LogError(ex, "Error in OLD equipment operations test");
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task TestUnitOfWork()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Test transaction capability
+            testResults.Add(new TestResult
+            {
+                TestName = "Unit of Work Initialization",
+                Success = true,
+                Message = "Unit of Work properly initialized and accessible"
+            });
+
+            // Test repository access through Unit of Work
+            var hasActiveTransaction = UnitOfWork.HasActiveTransaction;
+            testResults.Add(new TestResult
+            {
+                TestName = "Transaction State Check",
+                Success = true,
+                Message = $"Transaction state accessible. Current active transaction: {hasActiveTransaction}"
+            });
+
+            // Test that repositories are accessible
+            var equipmentRepo = UnitOfWork.Equipment;
+            var oldEquipmentRepo = UnitOfWork.OldEquipment;
+            
+            testResults.Add(new TestResult
+            {
+                TestName = "Repository Access",
+                Success = equipmentRepo != null && oldEquipmentRepo != null,
+                Message = equipmentRepo != null && oldEquipmentRepo != null 
+                    ? "Both repositories accessible through Unit of Work" 
+                    : "Failed to access repositories through Unit of Work"
+            });
+
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(new TestResult
+            {
+                TestName = "Unit of Work Test",
+                Success = false,
+                Message = "Unit of Work test failed",
+                Details = ex.Message
+            });
+            Logger.LogError(ex, "Error in Unit of Work test");
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+}

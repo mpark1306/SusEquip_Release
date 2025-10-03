@@ -1,0 +1,404 @@
+@using MudBlazor
+@using SusEquip.Data.Models
+@using SusEquip.Data.Services
+@using SusEquip.Data.Utilities
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject EquipmentService EquipmentService
+@inject OLDEquipmentService OLDEquipmentService
+@inject IJSRuntime JSRuntime
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Class="pa-4">
+            <!-- Header with Device Name and Status -->
+            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Computer" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Align="Align.Center">
+                        @(string.IsNullOrWhiteSpace(Equipment.PC_Name) ? "(No PC Name)" : Equipment.PC_Name)
+                    </MudText>
+                    <MudChip T="string" Color="@GetStatusColor(Equipment.Status)" Size="Size.Medium">
+                        @Equipment.Status
+                    </MudChip>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        Inst No: @FormatInstNo(Equipment.Inst_No) | Machine Type: @Equipment.MachineType
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Action Buttons (Same as MachinesLibrary) -->
+            <MudCard Elevation="2" Class="mb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Build" />
+                            <MudText Typo="Typo.h6">Device Actions</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudStack Row Spacing="2" Justify="Justify.Center">
+                        <MudTooltip Text="History" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                            <MudButton StartIcon="@Icons.Material.Rounded.History" 
+                                     Color="Color.Success" 
+                                     Variant="Variant.Filled"
+                                     OnClick="OpenHistoryDialog">
+                                Machine History
+                            </MudButton>
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Add Entry" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                            <MudButton StartIcon="@Icons.Material.Rounded.PlaylistAddCircle" 
+                                     Color="Color.Success" 
+                                     Variant="Variant.Filled"
+                                     OnClick="OpenEditDialog">
+                                Add Entry
+                            </MudButton>
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Documentation" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                            <MudButton StartIcon="@Icons.Material.Rounded.DocumentScanner"
+                                     Color="Color.Success"
+                                     Variant="Variant.Filled"
+                                     OnClick="CopyDocumentationData">
+                                Documentation
+                            </MudButton>
+                        </MudTooltip>
+                        
+                        <MudTooltip Text="Add to DTUPC" Color="Color.Tertiary" Arrow="true" Placement="Placement.Top">
+                            <MudButton StartIcon="@Icons.Material.Filled.DomainAdd"
+                                     Color="Color.Info"
+                                     Variant="Variant.Filled"
+                                     OnClick="OpenAddToDTUPCDialog">
+                                Add to DTUPC
+                            </MudButton>
+                        </MudTooltip>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+
+            <!-- Device Details -->
+            <MudGrid Spacing="3">
+                <!-- Basic Information -->
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" />
+                                    <MudText Typo="Typo.h6">Basic Information</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudTextField Label="Entry ID" Value="@Equipment.EntryId.ToString()" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Inst No" Value="@FormatInstNo(Equipment.Inst_No)" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="PC Name" Value="@Equipment.PC_Name" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Status" Value="@Equipment.Status" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Machine Type" Value="@Equipment.MachineType" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Entry Date" Value="@Equipment.Entry_Date" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Creator Initials" Value="@Equipment.Creator_Initials" ReadOnly="true" Variant="Variant.Outlined" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Hardware Information -->
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Memory" />
+                                    <MudText Typo="Typo.h6">Hardware Information</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudTextField Label="Serial Number" Value="@Equipment.Serial_No" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Product Number" Value="@Equipment.Product_No" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Model Name & No" Value="@Equipment.Model_Name_and_No" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="MAC Address 1" Value="@Equipment.Mac_Address1" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="MAC Address 2" Value="@Equipment.Mac_Address2" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="UUID" Value="@Equipment.UUID" ReadOnly="true" Variant="Variant.Outlined" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Service & Ownership -->
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Business" />
+                                    <MudText Typo="Typo.h6">Service & Ownership</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudTextField Label="App Owner" Value="@Equipment.App_Owner" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Department" Value="@Equipment.Department" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Service Start" Value="@Equipment.Service_Start" ReadOnly="true" Variant="Variant.Outlined" />
+                                <MudTextField Label="Service Ends" Value="@Equipment.Service_Ends" ReadOnly="true" Variant="Variant.Outlined" />
+                                @if (!string.IsNullOrWhiteSpace(Equipment.Service_Start) && !string.IsNullOrWhiteSpace(Equipment.Service_Ends))
+                                {
+                                    <MudAlert Severity="@GetServiceStatusSeverity()">
+                                        <MudText>@GetServiceStatusText()</MudText>
+                                    </MudAlert>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Notes -->
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Notes" />
+                                    <MudText Typo="Typo.h6">Notes</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudTextField Label="Note" 
+                                        Value="@Equipment.Note" 
+                                        ReadOnly="true" 
+                                        Variant="Variant.Outlined" 
+                                        Lines="4"
+                                        Placeholder="No notes available" />
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Close" 
+                   Color="Color.Default"
+                   Variant="Variant.Text">
+            Close
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public EquipmentData Equipment { get; set; } = null!;
+
+    private void Close() => MudDialog.Cancel();
+
+    // Helper method to format Inst_No with "O-" prefix for OLD machines
+    private string FormatInstNo(int instNo)
+    {
+        return instNo < 0 ? $"O-{Math.Abs(instNo)}" : instNo.ToString();
+    }
+
+    // Helper method to get status color
+    private Color GetStatusColor(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "new" => Color.Success,
+            "used" => Color.Primary,
+            "quarantine" => Color.Warning,
+            "kasseret" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    // Service status helpers
+    private Severity GetServiceStatusSeverity()
+    {
+        if (DateTime.TryParse(Equipment.Service_Ends, out var serviceEnd))
+        {
+            var today = DateTime.Today;
+            var daysUntilEnd = (serviceEnd - today).Days;
+            
+            if (daysUntilEnd < 0)
+                return Severity.Error; // Expired
+            else if (daysUntilEnd <= 90)
+                return Severity.Warning; // Expiring soon
+            else
+                return Severity.Success; // Active
+        }
+        return Severity.Info;
+    }
+
+    private string GetServiceStatusText()
+    {
+        if (DateTime.TryParse(Equipment.Service_Ends, out var serviceEnd))
+        {
+            var today = DateTime.Today;
+            var daysUntilEnd = (serviceEnd - today).Days;
+            
+            if (daysUntilEnd < 0)
+                return $"Service expired {Math.Abs(daysUntilEnd)} days ago";
+            else if (daysUntilEnd <= 90)
+                return $"Service expires in {daysUntilEnd} days";
+            else
+                return $"Service active for {daysUntilEnd} more days";
+        }
+        return "Service period information available";
+    }
+
+    // Action button methods (similar to MachinesLibrary)
+    private async Task OpenHistoryDialog()
+    {
+        try
+        {
+            // Check if this is an OLD machine (negative Inst_No)
+            if (Equipment.Inst_No < 0)
+            {
+                // Get history from OLD_Equip table
+                var allOldEquipment = OLDEquipmentService.GetOLDEquipment();
+                var selectedOldEquipment = allOldEquipment.Where(x => 
+                    x.Inst_No == Math.Abs(Equipment.Inst_No).ToString()).OrderByDescending(x => x.EntryId).ToList();
+
+                // Convert OLDEquipmentData list to EquipmentData list for the dialog
+                var selectedEquipment = selectedOldEquipment.Select(oldEquip => new EquipmentData
+                {
+                    EntryId = oldEquip.EntryId,
+                    Entry_Date = oldEquip.Entry_Date,
+                    Inst_No = Equipment.Inst_No, // Keep original negative value
+                    Creator_Initials = oldEquip.Creator_Initials,
+                    App_Owner = oldEquip.App_Owner,
+                    Status = oldEquip.Status,
+                    Serial_No = oldEquip.Serial_No,
+                    Mac_Address1 = oldEquip.Mac_Address1,
+                    Mac_Address2 = oldEquip.Mac_Address2,
+                    UUID = oldEquip.UUID,
+                    Product_No = oldEquip.Product_No,
+                    Model_Name_and_No = oldEquip.Model_Name_and_No,
+                    Department = oldEquip.Department,
+                    PC_Name = oldEquip.PC_Name,
+                    Service_Start = oldEquip.Service_Start,
+                    Service_Ends = oldEquip.Service_Ends,
+                    Note = oldEquip.Note,
+                    MachineType = oldEquip.MachineType
+                }).ToList();
+
+                var parameters = new DialogParameters
+                {
+                    ["EquipmentData"] = Equipment,
+                    ["EquipmentList"] = selectedEquipment
+                };
+                
+                var dialog = DialogService.Show<Dialog.HistoryDialog>("OLD PC History", parameters);
+                var result = await dialog.Result;
+            }
+            else
+            {
+                // Regular machine - get history from main Equip table
+                var selectedEquipment = EquipmentService.GetEquipmentSorted(Equipment.Inst_No);
+                
+                var parameters = new DialogParameters
+                {
+                    ["EquipmentData"] = Equipment,
+                    ["EquipmentList"] = selectedEquipment
+                };
+                
+                var dialog = DialogService.Show<Dialog.HistoryDialog>("Machine History", parameters);
+                var result = await dialog.Result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening history: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenEditDialog()
+    {
+        try
+        {
+            var equipmentList = EquipmentService.GetEquipmentSorted(Equipment.Inst_No);
+            
+            var parameters = new DialogParameters
+            {
+                ["EquipmentData"] = Equipment,
+                ["EquipmentList"] = equipmentList,
+                ["ContentText"] = "Edit Equipment"
+            };
+            
+            var dialog = DialogService.Show<Dialog.EditDialog>("Edit Device", parameters);
+            var result = await dialog.Result;
+            
+            if (result != null && !result.Canceled)
+            {
+                Snackbar.Add("Device updated successfully", Severity.Success);
+                // Could refresh the equipment data here if needed
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening edit dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CopyDocumentationData()
+    {
+        try
+        {
+            var documentation = $@"PC Name: {Equipment.PC_Name}
+Inst No: {FormatInstNo(Equipment.Inst_No)}
+Status: {Equipment.Status}
+Serial No: {Equipment.Serial_No}
+MAC Address: {Equipment.Mac_Address1}
+UUID: {Equipment.UUID}
+Product No: {Equipment.Product_No}
+Model: {Equipment.Model_Name_and_No}
+App Owner: {Equipment.App_Owner}
+Department: {Equipment.Department}
+Service Period: {Equipment.Service_Start} - {Equipment.Service_Ends}
+Machine Type: {Equipment.MachineType}
+Notes: {Equipment.Note}";
+
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", documentation);
+            Snackbar.Add("Documentation copied to clipboard", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error copying documentation: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenAddToDTUPCDialog()
+    {
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                ["Equipment"] = Equipment
+            };
+
+            var dialogOptions = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Large,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<Dialog.AddToDTUPCDialog>("Add Device to DTUPC", parameters, dialogOptions);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                Snackbar.Add("Device added to DTUPC successfully", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening DTUPC dialog: {ex.Message}", Severity.Error);
+        }
+    }
+}

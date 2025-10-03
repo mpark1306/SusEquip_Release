@@ -1,0 +1,240 @@
+using Microsoft.Extensions.Logging;
+using SusEquip.Data.Commands.Equipment;
+using SusEquip.Data.Models;
+using SusEquip.Data.Services;
+using SusEquip.Data.Exceptions;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace SusEquip.Data.Commands.Examples
+{
+    /// <summary>
+    /// Comprehensive examples demonstrating the Command Pattern implementation
+    /// </summary>
+    public class CommandPatternExample
+    {
+        private readonly ICommandExecutor _commandExecutor;
+        private readonly IEquipmentServiceSync _equipmentService;
+        private readonly DataValidationService _validationService;
+        private readonly ILogger<CommandPatternExample> _logger;
+
+        public CommandPatternExample(
+            ICommandExecutor commandExecutor,
+            IEquipmentServiceSync equipmentService,
+            DataValidationService validationService,
+            ILogger<CommandPatternExample> logger)
+        {
+            _commandExecutor = commandExecutor;
+            _equipmentService = equipmentService;
+            _validationService = validationService;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Example: Adding new equipment using command pattern
+        /// </summary>
+        public async Task<EquipmentOperationResult> AddEquipmentExample()
+        {
+            _logger.LogInformation("=== Command Pattern Example: Add Equipment ===");
+
+            // Create sample equipment data
+            var newEquipment = new EquipmentData
+            {
+                Creator_Initials = "JDoe",
+                Department = "IT",
+                MachineType = "Laptop",
+                Status = "Active",
+                Serial_No = "LAP-2024-001"
+            };
+
+            // Create and execute command
+            var addCommand = new AddEquipmentCommand(
+                newEquipment,
+                _equipmentService,
+                _validationService,
+                null! // Using null! for logger in this example
+            );
+
+            var result = await _commandExecutor.ExecuteAsync(addCommand);
+
+            if (result.Success)
+            {
+                _logger.LogInformation($"Equipment added successfully with ID: {result.EquipmentId}");
+            }
+            else
+            {
+                _logger.LogError($"Failed to add equipment: {result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Example: Updating equipment status using command pattern
+        /// </summary>
+        public async Task<EquipmentOperationResult> UpdateStatusExample()
+        {
+            _logger.LogInformation("=== Command Pattern Example: Update Status ===");
+
+            // Create update status command
+            var updateCommand = new UpdateEquipmentStatusCommand(
+                entryId: 1,
+                instNo: 1001,
+                newStatus: "Maintenance",
+                updatedBy: "admin",
+                updateReason: "Scheduled maintenance",
+                _equipmentService,
+                null! // Using null! for logger in this example
+            );
+
+            var result = await _commandExecutor.ExecuteAsync(updateCommand);
+
+            if (result.Success)
+            {
+                _logger.LogInformation("Equipment status updated successfully");
+            }
+            else
+            {
+                _logger.LogError($"Failed to update status: {result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Example: Bulk import using command pattern with error handling
+        /// </summary>
+        public async Task<ImportResult> BulkImportExample(List<EquipmentData> equipmentList)
+        {
+            _logger.LogInformation("=== Command Pattern Example: Bulk Import ===");
+
+            // Create the command with proper constructor parameters
+            var bulkImportCommand = new BulkImportEquipmentCommand(
+                equipmentList,
+                "admin", // importedBy
+                false, // skipValidationErrors
+                _equipmentService,
+                _validationService,
+                null! // Using null! for logger in this example
+            );
+
+            // Execute the command
+            var result = await _commandExecutor.ExecuteAsync(bulkImportCommand);
+
+            if (result.IsCompleteSuccess)
+            {
+                _logger.LogInformation("Bulk import completed successfully");
+            }
+            else
+            {
+                _logger.LogWarning($"Bulk import completed with errors: {result.FailedItems.Count} failures");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Example: Command pattern with validation and error handling
+        /// </summary>
+        public async Task<EquipmentOperationResult> ValidationExample()
+        {
+            _logger.LogInformation("=== Command Pattern Example: Validation Handling ===");
+
+            try
+            {
+                // Create equipment with intentional validation errors
+                var invalidEquipment = new EquipmentData
+                {
+                    Creator_Initials = "", // Empty creator initials should trigger validation error
+                    Department = "IT",
+                    MachineType = "InvalidType", // Invalid machine type
+                    Status = "InvalidStatus" // Invalid status
+                };
+
+                var addCommand = new AddEquipmentCommand(
+                    invalidEquipment,
+                    _equipmentService,
+                    _validationService,
+                    null! // Using null! for logger in this example
+                );
+
+                var result = await _commandExecutor.ExecuteAsync(addCommand);
+
+                // The command executor will handle validation exceptions
+                _logger.LogInformation($"Command completed. Success: {result.Success}, Message: {result.Message}");
+
+                return result;
+            }
+            catch (SusEquipException ex)
+            {
+                _logger.LogError(ex, "SusEquip-specific error occurred");
+                return new EquipmentOperationResult
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Example: Complete workflow combining multiple commands
+        /// </summary>
+        public async Task<string> WorkflowExample()
+        {
+            _logger.LogInformation("=== Command Pattern Example: Complete Workflow ===");
+
+            var results = new List<string>();
+
+            // Step 1: Add new equipment
+            var addResult = await AddEquipmentExample();
+            results.Add($"✓ Add Equipment: {(addResult.Success ? "Success" : "Failed")} - {addResult.Message}");
+
+            if (addResult.Success && addResult.EquipmentId > 0)
+            {
+                // Step 2: Update the equipment status
+                var updateCommand = new UpdateEquipmentStatusCommand(
+                    addResult.EquipmentId,
+                    1001, // instNo
+                    "In Use",
+                    "admin",
+                    "Equipment deployed",
+                    _equipmentService,
+                    null! // Using null! for logger in this example
+                );
+
+                var updateResult = await _commandExecutor.ExecuteAsync(updateCommand);
+                results.Add($"✓ Update Status: {(updateResult.Success ? "Success" : "Failed")} - {updateResult.Message}");
+            }
+
+            // Step 3: Bulk import additional equipment
+            var sampleEquipment = CreateSampleEquipmentList();
+            var bulkResult = await BulkImportExample(sampleEquipment);
+            results.Add($"✓ Bulk Import: Processed {bulkResult.TotalProcessed} items, Success Rate: {bulkResult.SuccessRate:F1}%");
+
+            _logger.LogInformation("Workflow completed. Results: {Results}", string.Join(" | ", results));
+            return string.Join("\n", results);
+        }
+
+        /// <summary>
+        /// Create sample equipment data for examples
+        /// </summary>
+        private List<EquipmentData> CreateSampleEquipmentList()
+        {
+            var equipmentList = new List<EquipmentData>();
+
+            for (int i = 1; i <= 3; i++)
+            {
+                equipmentList.Add(new EquipmentData
+                {
+                    Creator_Initials = $"User{i}",
+                    Department = "IT",
+                    MachineType = "Desktop",
+                    Status = "Active",
+                    Serial_No = $"DESK-2024-{i:000}"
+                });
+            }
+
+            return equipmentList;
+        }
+    }
+}

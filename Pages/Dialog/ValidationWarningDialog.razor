@@ -1,0 +1,133 @@
+@using SusEquip.Data.Models
+@using MudBlazor
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-0">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; border-radius: 12px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Align="Align.Center">
+                        Validation Issues Detected
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        The following potential issues were found with your equipment data
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Issues List -->
+            <MudCard Elevation="4" Style="border-radius: 12px;">
+                <MudCardContent Class="pa-6">
+                    <MudStack Spacing="3">
+                        @foreach (var issue in Issues)
+                        {
+                            var severityColor = GetSeverityColor(issue.Severity);
+                            var paperStyle = $"border-left: 4px solid {severityColor}; border-radius: 8px;";
+                            var titleStyle = $"font-weight: bold; color: {severityColor};";
+                            
+                            <MudPaper Elevation="2" Class="pa-4" Style="@paperStyle">
+                                <MudStack Spacing="2">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@GetSeverityIcon(issue.Severity)" Color="@GetSeverityMudColor(issue.Severity)" />
+                                        <MudText Typo="Typo.subtitle1" Style="@titleStyle">
+                                            @issue.Severity.ToUpperInvariant()
+                                        </MudText>
+                                        <MudText Typo="Typo.h6" Style="color: #333;">
+                                            @issue.IssueType
+                                        </MudText>
+                                    </MudStack>
+                                    
+                                    <MudText Typo="Typo.body2" Style="color: #666;">
+                                        @issue.Reason
+                                    </MudText>
+                                    
+                                    @if (!string.IsNullOrEmpty(issue.SuggestedValue))
+                                    {
+                                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Color="Color.Warning" Size="Size.Small" />
+                                            <MudText Typo="Typo.body2" Style="color: #f57c00; font-weight: 500;">
+                                                Suggested: @issue.SuggestedValue
+                                            </MudText>
+                                        </MudStack>
+                                    }
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+
+            <!-- Action Information -->
+            <MudPaper Elevation="1" Class="pa-4 mt-4" Style="background: #f5f5f5; border-radius: 8px;">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" />
+                    <MudText Typo="Typo.body2" Style="color: #666;">
+                        You can proceed anyway if you have a valid reason, or cancel to fix these issues first.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudStack Row Justify="Justify.FlexEnd" Spacing="3">
+                <MudButton OnClick="Cancel" 
+                         Color="Color.Default" 
+                         Variant="Variant.Text"
+                         StartIcon="@Icons.Material.Filled.Close">
+                    Cancel
+                </MudButton>
+                <MudButton OnClick="ProceedAnyway" 
+                         Color="Color.Warning" 
+                         Variant="Variant.Filled"
+                         StartIcon="@Icons.Material.Filled.CheckCircle">
+                    Proceed Anyway
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired] public List<ValidationIssue> Issues { get; set; } = new();
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+    private void ProceedAnyway() => MudDialog.Close(DialogResult.Ok(true));
+
+    private string GetSeverityColor(string severity)
+    {
+        return severity switch
+        {
+            "High" => "#f44336",
+            "Medium" => "#ff9800",
+            "Low" => "#2196f3",
+            _ => "#666"
+        };
+    }
+
+    private Color GetSeverityMudColor(string severity)
+    {
+        return severity switch
+        {
+            "High" => Color.Error,
+            "Medium" => Color.Warning,
+            "Low" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private string GetSeverityIcon(string severity)
+    {
+        return severity switch
+        {
+            "High" => Icons.Material.Filled.Error,
+            "Medium" => Icons.Material.Filled.Warning,
+            "Low" => Icons.Material.Filled.Info,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+}

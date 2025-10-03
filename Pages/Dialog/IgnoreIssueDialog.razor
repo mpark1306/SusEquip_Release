@@ -1,0 +1,204 @@
+@using MudBlazor
+@using SusEquip.Data.Models
+@using SusEquip.Data.Utilities
+@using SusEquip.Data.Services
+@using SusEquip.Data.Interfaces.Services
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ICookieService CookieService
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Class="pa-4">
+            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; border-radius: 8px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.VisibilityOff" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Align="Align.Center">Ignore Validation Issue</MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        This issue will be moved to the "Ignored Issues" tab
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <MudGrid>
+                <!-- Issue Information -->
+                <MudItem xs="12">
+                    <MudCard Elevation="2" Class="mb-4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@GetSeverityIcon(Issue.Severity)" Color="@GetSeverityColor(Issue.Severity)" />
+                                    <MudText Typo="Typo.h6">@Issue.IssueType</MudText>
+                                    <MudChip T="string" Color="@GetSeverityColor(Issue.Severity)" Size="Size.Small">@Issue.Severity</MudChip>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudText><strong>Equipment:</strong> @Issue.PCName (Inst No: @Issue.InstNo)</MudText>
+                                <MudText><strong>Field:</strong> @Issue.FieldName</MudText>
+                                <MudText><strong>Current Value:</strong> @(string.IsNullOrWhiteSpace(Issue.CurrentValue) ? "(Empty)" : Issue.CurrentValue)</MudText>
+                                <MudText><strong>Reason:</strong> @Issue.Reason</MudText>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Warning -->
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Warning" Class="mb-4">
+                        <MudText>
+                            <strong>Warning:</strong> By ignoring this issue, it will no longer appear in the main validation list 
+                            and will not show red indicators in the machine library. The issue will be logged in the "Ignored Issues" tab 
+                            where you can review or unignore it later if needed.
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+
+                <!-- Ignore Details -->
+                <MudItem xs="12">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Assignment" />
+                                    <MudText Typo="Typo.h6">Ignore Details</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="3">
+                                <MudTextField @bind-Value="IgnoredBy" 
+                                            Label="Your Initials" 
+                                            Variant="Variant.Outlined" 
+                                            Required="true"
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                                <MudTextField @bind-Value="IgnoreReason" 
+                                            Label="Reason for Ignoring" 
+                                            Variant="Variant.Outlined" 
+                                            Lines="3"
+                                            Required="true"
+                                            Placeholder="Explain why this issue should be ignored..."
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.Description" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Color="Color.Default"
+                   Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="ConfirmIgnore" 
+                   Color="Color.Warning"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.VisibilityOff"
+                   Disabled="@(!IsFormValid())">
+            Ignore Issue
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ValidationIssue Issue { get; set; } = null!;
+
+    private string IgnoredBy = string.Empty;
+    private string IgnoreReason = string.Empty;
+    private bool _firstRender = true;
+    private bool hasRendered = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _firstRender && !hasRendered)
+        {
+            _firstRender = false;
+            hasRendered = true;
+            try
+            {
+                // Pre-populate with user's initials from cookies if available
+                IgnoredBy = await CookieService.GetCookieAsync("Creator_Initials") ?? string.Empty;
+                StateHasChanged(); // Trigger re-render to show the populated initials
+            }
+            catch (Exception)
+            {
+                // If cookie service fails, just leave initials empty
+                IgnoredBy = string.Empty;
+            }
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(IgnoredBy) &&
+               !string.IsNullOrWhiteSpace(IgnoreReason);
+    }
+
+    private Task ConfirmIgnore()
+    {
+        if (!IsFormValid())
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            var ignoredIssue = new IgnoredIssue
+            {
+                EntryId = Issue.EntryId,
+                InstNo = Issue.InstNo,
+                PCName = Issue.PCName,
+                IssueType = Issue.IssueType,
+                FieldName = Issue.FieldName,
+                CurrentValue = Issue.CurrentValue,
+                SuggestedValue = Issue.SuggestedValue,
+                Reason = Issue.Reason,
+                Severity = Issue.Severity,
+                IgnoredBy = IgnoredBy,
+                IgnoreReason = IgnoreReason,
+                IgnoredDate = DateTime.Now
+            };
+            
+            MudDialog.Close(DialogResult.Ok(ignoredIssue));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error ignoring issue: {ex.Message}", Severity.Error);
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private string GetSeverityIcon(string severity)
+    {
+        return severity switch
+        {
+            "High" => Icons.Material.Filled.Error,
+            "Medium" => Icons.Material.Filled.Warning,
+            "Low" => Icons.Material.Filled.Info,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private Color GetSeverityColor(string severity)
+    {
+        return severity switch
+        {
+            "High" => Color.Error,
+            "Medium" => Color.Warning,
+            "Low" => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

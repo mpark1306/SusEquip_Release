@@ -1,0 +1,542 @@
+@* @using SusEquip.Data
+@using SusEquip.Data.Models
+@using System.Net.Sockets
+@inject SusEquip.Data.Services.EquipmentService _Equipment
+@inject IDialogService Dialog
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-0">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border-radius: 12px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Print" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Align="Align.Center">
+                        Print Labels
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        Generate equipment labels for @MachineData.PC_Name
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Label Configuration Cards -->
+            <MudGrid Spacing="3">
+                <!-- Computer Name Label -->
+                <MudItem xs="12">
+                    <MudCard Elevation="3" Style="border-radius: 12px;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Primary" />
+                                    <MudText Typo="Typo.h6">Computer Name Label</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="3">
+                                <MudText Typo="Typo.body1" Style="background: #f3f4f6; padding: 12px; border-radius: 8px; font-family: monospace;">
+                                    @MachineData.PC_Name
+                                </MudText>
+                                <MudSelect T="int" 
+                                         Label="Number of Copies" 
+                                         @bind-Value="computerNameCopies" 
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         Adornment="Adornment.Start"
+                                         AdornmentIcon="@Icons.Material.Filled.ContentCopy">
+                                    <MudSelectItem Value="0">0 copies</MudSelectItem>
+                                    <MudSelectItem Value="1">1 copy</MudSelectItem>
+                                    <MudSelectItem Value="2">2 copies</MudSelectItem>
+                                </MudSelect>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Admin User Label -->
+                <MudItem xs="12">
+                    <MudCard Elevation="3" Style="border-radius: 12px;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Secondary" />
+                                    <MudText Typo="Typo.h6">Admin User Label</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="3">
+                                <MudText Typo="Typo.body1" Style="background: #f3f4f6; padding: 12px; border-radius: 8px; font-family: monospace;">
+                                    @formattedAdminUser
+                                </MudText>
+                                <MudSelect T="int" 
+                                         Label="Number of Copies" 
+                                         @bind-Value="adminUserNameCopies" 
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         Adornment="Adornment.Start"
+                                         AdornmentIcon="@Icons.Material.Filled.ContentCopy">
+                                    <MudSelectItem Value="0">0 copies</MudSelectItem>
+                                    <MudSelectItem Value="1">1 copy</MudSelectItem>
+                                    <MudSelectItem Value="2">2 copies</MudSelectItem>
+                                </MudSelect>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Service Until Label -->
+                <MudItem xs="12">
+                    <MudCard Elevation="3" Style="border-radius: 12px;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Tertiary" />
+                                    <MudText Typo="Typo.h6">Service Until Label</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="3">
+                                <MudText Typo="Typo.body1" Style="background: #f3f4f6; padding: 12px; border-radius: 8px; font-family: monospace;">
+                                    Service until: @endDate
+                                </MudText>
+                                <MudSelect T="int" 
+                                         Label="Number of Copies" 
+                                         @bind-Value="serviceUntilCopies" 
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         Adornment="Adornment.Start"
+                                         AdornmentIcon="@Icons.Material.Filled.ContentCopy">
+                                    <MudSelectItem Value="0">0 copies</MudSelectItem>
+                                    <MudSelectItem Value="1">1 copy</MudSelectItem>
+                                    <MudSelectItem Value="2">2 copies</MudSelectItem>
+                                </MudSelect>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudStack Row Justify="Justify.SpaceBetween" Spacing="3">
+                <MudButton OnClick="TestPrint" 
+                         Color="Color.Info" 
+                         Variant="Variant.Outlined"
+                         StartIcon="@Icons.Material.Filled.BugReport">
+                    Test Print
+                </MudButton>
+                <MudStack Row Spacing="3">
+                    <MudButton OnClick="Close" 
+                             Color="Color.Default" 
+                             Variant="Variant.Text"
+                             StartIcon="@Icons.Material.Filled.Close">
+                        Cancel
+                    </MudButton>
+                    <MudButton OnClick="Print" 
+                             Color="Color.Primary" 
+                             Variant="Variant.Filled"
+                             StartIcon="@Icons.Material.Filled.Print">
+                        Print Labels
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudContainer>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string ContentText { get; set; } = string.Empty;
+    [Parameter] public MachineData MachineData { get; set; } = default!;
+    [Parameter] public List<EquipmentData> EquipmentList { get; set; } = new();
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    MudForm form = default!;
+    private string Appowner = string.Empty;
+    // Default copies set to specified values
+    private int computerNameCopies = 2;
+    private int adminUserNameCopies = 1;
+    private int serviceUntilCopies = 1;
+
+    // Service_Ends is a string property of MachineData
+    private string endDate = string.Empty;
+    private string formattedAdminUser = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        base.OnInitialized();
+        Console.WriteLine($"App Owner: {MachineData.App_Owner}");
+        _Equipment.GetEquipSortedByEntry(MachineData.Inst_No);
+        Console.WriteLine($"App Owner: {MachineData.App_Owner}");
+
+        // Format the date string
+        string originalDateStr = MachineData.Service_Ends;
+        if (!string.IsNullOrEmpty(originalDateStr))
+        {
+            string[] parts = originalDateStr.Split('-');
+            if (parts.Length == 3)
+            {
+                endDate = $"{parts[1]}/{parts[2]}/{parts[0]}";
+            }
+            else
+            {
+                endDate = "Invalid date format";
+            }
+        }
+        else
+        {
+            endDate = "No date available";
+        }
+
+        try
+        {
+            if (!string.IsNullOrEmpty(MachineData.App_Owner))
+            {
+                formattedAdminUser = $".\\admin-{MachineData.App_Owner}";
+            }
+            else
+            {
+                formattedAdminUser = "No admin user";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing app owner: {ex.Message}");
+            formattedAdminUser = "Error processing admin user";
+        }
+    }
+
+    private async Task Print()
+    {
+        try
+        {
+            await PrintLabels();
+            ShowSuccessMessage("Labels printed successfully to Brother printer!");
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Print failed: {ex.Message}");
+        }
+    }
+
+    private async Task PrintLabels()
+    {
+        var printerHostname = "it-afdelingen.sus.clients.local";
+        var printerIP = "10.61.1.9";
+        var printerPort = 9100;
+        
+        // Create list of all labels to print in order
+        var labels = new List<string>();
+        
+        // Add copies of computer name
+        for (int i = 0; i < computerNameCopies; i++)
+        {
+            labels.Add(MachineData.PC_Name);
+        }
+        
+        // Add copies of admin user
+        for (int i = 0; i < adminUserNameCopies; i++)
+        {
+            labels.Add(formattedAdminUser);
+        }
+        
+        // Add copies of service end date
+        for (int i = 0; i < serviceUntilCopies; i++)
+        {
+            labels.Add(FormatServiceEndDate(MachineData.Service_Ends));
+        }
+        
+        // Skip if no labels to print
+        if (labels.Count == 0)
+        {
+            ShowErrorMessage("No labels selected for printing");
+            return;
+        }
+        
+        // Try hostname first, then IP as fallback for chain printing
+        try
+        {
+            await SendAllLabelsToPrinter(printerHostname, printerPort, labels);
+        }
+        catch (Exception)
+        {
+            // Try IP fallback
+            try
+            {
+                await SendAllLabelsToPrinter(printerIP, printerPort, labels);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Cannot connect to printer");
+            }
+        }
+    }
+    
+    private async Task SendAllLabelsToPrinter(string printerHost, int port, List<string> labels)
+    {
+        using (var client = new System.Net.Sockets.TcpClient())
+        {
+            client.ReceiveTimeout = 10000; // Longer timeout for multiple labels
+            client.SendTimeout = 10000;
+            
+            await client.ConnectAsync(printerHost, port);
+            
+            using (var stream = client.GetStream())
+            {
+                // Send all labels in one connection session for chain printing
+                foreach (var label in labels)
+                {
+                    await SendBrotherPrintCommand(stream, label);
+                    await Task.Delay(1000); // Delay between labels to allow processing
+                }
+                
+                // Send final cut command to finish the chain
+                await SendFinalCutCommand(stream);
+            }
+        }
+    }
+    
+    private async Task SendBrotherPrintCommand(NetworkStream stream, string labelText)
+    {
+        // Determine label type and format accordingly
+        bool isServiceLabel = labelText.Contains("Service ends:");
+        bool isAdminLabel = labelText.Contains(".\\admin-");
+        bool isPCNameLabel = !isServiceLabel && !isAdminLabel;
+        
+        Console.WriteLine($"Printing label: '{labelText}' (Service: {isServiceLabel}, Admin: {isAdminLabel}, PC: {isPCNameLabel})");
+        
+        // Brother PT-P950NW specific ESC/P-touch command sequence
+        var commands = new List<byte[]>
+        {
+            // Initialize printer
+            new byte[] { 0x1B, 0x40 }, // ESC @ - Initialize
+            
+            // Invalidate command (specific to P-touch printers)
+            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            
+            // Set command mode
+            new byte[] { 0x1B, 0x69, 0x61, 0x01 }, // ESC i a 1 - Switch to command mode
+            
+            // CRITICAL: Set chain printing mode - no auto-cut
+            new byte[] { 0x1B, 0x69, 0x4D, 0x40 }, // ESC i M @ - Special mode for chain printing
+            new byte[] { 0x1B, 0x69, 0x4B, 0x08 }, // ESC i K 8 - Chain print mode (no cut between labels)
+            new byte[] { 0x1B, 0x69, 0x41, 0x01 }, // ESC i A 1 - Set feed amount to minimum
+            
+            // Set media type (12mm continuous tape for PT-P950NW)
+            new byte[] { 0x1B, 0x69, 0x7A, 0x84, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00 }, // ESC i z - Media & quality (12mm)
+            
+            // Set margins to minimal for chain printing
+            new byte[] { 0x1B, 0x69, 0x64, 0x00, 0x00 }, // ESC i d - Set margins to 0
+            
+            // Switch to ESC/P mode for text
+            new byte[] { 0x1B, 0x69, 0x61, 0x00 }, // ESC i a 0 - Switch to ESC/P mode
+        };
+        
+        // Set font size and style based on label type
+        if (isServiceLabel)
+        {
+            // Service label: Medium font, 2 lines for Service ends date
+            Console.WriteLine("Setting Service label font - Medium size for 2 lines");
+            commands.Add(new byte[] { 0x1B, 0x69, 0x66, 0x01 }); // ESC i f 1 - Set 2-line format
+            commands.Add(new byte[] { 0x1B, 0x69, 0x73, 0x01 }); // ESC i s 1 - Set medium font style
+            commands.Add(new byte[] { 0x1B, 0x69, 0x46, 0x00, 0x12 }); // ESC i F - Set font size to 18 points
+        }
+        else if (isAdminLabel)
+        {
+            // Admin label: Large font to fill width
+            Console.WriteLine("Setting Admin label font - Large size");
+            commands.Add(new byte[] { 0x1B, 0x69, 0x66, 0x00 }); // ESC i f 0 - Set 1-line format
+            commands.Add(new byte[] { 0x1B, 0x69, 0x73, 0x02 }); // ESC i s 2 - Set large font style
+            commands.Add(new byte[] { 0x1B, 0x69, 0x46, 0x00, 0x18 }); // ESC i F - Set font size to 24 points
+        }
+        else if (isPCNameLabel)
+        {
+            // PC Name: Very large font to fill width
+            Console.WriteLine("Setting PC Name label font - Very large size");
+            commands.Add(new byte[] { 0x1B, 0x69, 0x66, 0x00 }); // ESC i f 0 - Set 1-line format
+            commands.Add(new byte[] { 0x1B, 0x69, 0x73, 0x03 }); // ESC i s 3 - Set extra large font style
+            commands.Add(new byte[] { 0x1B, 0x69, 0x46, 0x00, 0x20 }); // ESC i F - Set font size to 32 points
+        }
+        
+        // Add text data
+        commands.Add(System.Text.Encoding.UTF8.GetBytes(labelText));
+        
+        // Add line feed for text end
+        commands.Add(new byte[] { 0x0D, 0x0A }); // CR LF
+        
+        // Print command for chain printing - NO cut
+        commands.Add(new byte[] { 0x1B, 0x69, 0x50, 0x01 }); // ESC i P 1 - Print without cut
+        
+        foreach (var command in commands)
+        {
+            await stream.WriteAsync(command, 0, command.Length);
+            await stream.FlushAsync();
+            await Task.Delay(100); // Shorter delay for chain printing
+        }
+        
+        Console.WriteLine("Label command sent successfully");
+    }
+    
+    private async Task SendFinalCutCommand(NetworkStream stream)
+    {
+        // Send final cut command to finish the chain
+        var cutCommand = new byte[] { 0x1B, 0x69, 0x4B, 0x01 }; // ESC i K 1 - Cut at end
+        await stream.WriteAsync(cutCommand, 0, cutCommand.Length);
+        await stream.FlushAsync();
+        Console.WriteLine("Final cut command sent");
+    }
+
+    private async Task TestPrint()
+    {
+        try
+        {
+            Console.WriteLine("Starting test print...");
+            Console.WriteLine("Target printer: Brother PT-P950NW");
+            
+            var printerHostname = "it-afdelingen.sus.clients.local";
+            var printerIP = "10.61.1.9";
+            var success = false;
+            
+            // Create a simple test label
+            var testLabel = "TEST PRINT\nBrother PT-P950NW\n" + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+            
+            Console.WriteLine($"Test label content: '{testLabel}'");
+            
+            // Method 1: Try hostname with port 9100
+            try
+            {
+                await SendLabelToPrinter(printerHostname, 9100, testLabel);
+                ShowSuccessMessage("Test print sent successfully via hostname!");
+                success = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Hostname method failed: {ex.Message}");
+            }
+            
+            // Method 2: Try IP with port 9100
+            if (!success)
+            {
+                try
+                {
+                    await SendLabelToPrinter(printerIP, 9100, testLabel);
+                    ShowSuccessMessage("Test print sent successfully via IP!");
+                    success = true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"IP method failed: {ex.Message}");
+                }
+            }
+            
+            // Method 3: Try fallback ports
+            if (!success)
+            {
+                try
+                {
+                    await SendLabelToPrinterNoPort(printerHostname, testLabel);
+                    ShowSuccessMessage("Test print sent successfully via fallback method!");
+                    success = true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Fallback method failed: {ex.Message}");
+                }
+            }
+            
+            if (!success)
+            {
+                ShowErrorMessage("Test print failed - cannot connect to printer");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Test print failed: {ex.Message}");
+        }
+    }
+    
+    private async Task SendLabelToPrinter(string printerHost, int port, string labelText)
+    {
+        using (var client = new System.Net.Sockets.TcpClient())
+        {
+            client.ReceiveTimeout = 5000;
+            client.SendTimeout = 5000;
+            
+            await client.ConnectAsync(printerHost, port);
+            
+            using (var stream = client.GetStream())
+            {
+                await SendBrotherPrintCommand(stream, labelText);
+                await Task.Delay(500);
+            }
+        }
+    }
+    
+    private async Task SendLabelToPrinterNoPort(string printerHost, string labelText)
+    {
+        var fallbackPorts = new int[] { 9100, 515, 631 };
+        foreach (var port in fallbackPorts)
+        {
+            try
+            {
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    client.ReceiveTimeout = 2000;
+                    client.SendTimeout = 2000;
+                    await client.ConnectAsync(printerHost, port);
+                    using (var stream = client.GetStream())
+                    {
+                        await SendBrotherPrintCommand(stream, labelText);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // Try next port
+            }
+        }
+        throw new Exception("All connection methods failed");
+    }
+    
+    private void ShowSuccessMessage(string message)
+    {
+        Snackbar.Add(message, Severity.Success);
+    }
+    
+    private void ShowErrorMessage(string message)
+    {
+        Snackbar.Add(message, Severity.Error);
+    }
+    
+    private string FormatServiceEndDate(string serviceEnds)
+    {
+        if (string.IsNullOrEmpty(serviceEnds))
+            return "Service ends: No date";
+            
+        try
+        {
+            var parts = serviceEnds.Split('-');
+            if (parts.Length == 3)
+            {
+                return $"Service ends:\n{parts[1]}/{parts[2]}/{parts[0]}";
+            }
+        }
+        catch
+        {
+            // Fall back to original format if parsing fails
+        }
+        
+        return $"Service ends:\n{serviceEnds}";
+    }
+    
+    private void Close()
+    {
+        MudDialog.Close(DialogResult.Cancel());
+    }
+} *@

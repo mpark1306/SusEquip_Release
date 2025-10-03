@@ -1,0 +1,351 @@
+﻿@using Newtonsoft.Json
+@using System.Net.Http.Headers
+@using System.DirectoryServices
+@using SusEquip.Data.Models
+@using SusEquip.Data.Interfaces.Services
+@using MudBlazor
+@using SusEquip.Data.Services
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory HttpClientFactory
+@inject IApiService ApiService
+@inject DatabaseHelper DatabaseHelper
+@inject IJSRuntime JSRuntime
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Class="pa-0">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="pa-6 mb-4" Style="background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: white; border-radius: 12px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Align="Align.Center">
+                        Add Device to DTUPC
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center" Style="opacity: 0.9;">
+                        Fill in the data for DTUPC creation
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Main Form Card -->
+            <MudCard Elevation="4" Style="border-radius: 12px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6">Device Information</MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-6">
+                    <MudStack Spacing="4">
+                        <!-- Device Details -->
+                        <MudTextField T="string" 
+                                    Label="PC Name" 
+                                    @bind-Value="pcName" 
+                                    Variant="Variant.Outlined"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Computer" />
+
+                        <MudTextField T="string" 
+                                    Label="Mac Address" 
+                                    @bind-Value="macAddress1" 
+                                    Variant="Variant.Outlined"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.NetworkWifi" />
+
+                        <MudTextField T="string" 
+                                    Label="UUID" 
+                                    @bind-Value="uuid" 
+                                    Variant="Variant.Outlined"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Fingerprint" />
+
+                        <!-- Divider for Organization -->
+                        <MudDivider />
+                        <MudText Typo="Typo.h6">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Class="mr-2" />
+                            Organizational Unit Configuration
+                        </MudText>
+
+                        <!-- OU Selection -->
+                        <MudSelect T="string" 
+                                 Label="Main OU" 
+                                 @bind-Value="selectedMainOU"
+                                 Variant="Variant.Outlined"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.AccountTree">
+                            <MudSelectItem Value="@("Employee")">Employee</MudSelectItem>
+                            <MudSelectItem Value="@("General")">General</MudSelectItem>
+                            <MudSelectItem Value="@("Industrial PhD")">Industrial PhD</MudSelectItem>
+                            <MudSelectItem Value="@("Lab")">Lab</MudSelectItem>
+                            <MudSelectItem Value="@("Student")">Student</MudSelectItem>
+                        </MudSelect>
+
+                        <MudSelect T="string" 
+                                 Label="Sub OU" 
+                                 @bind-Value="selectedSubOU"
+                                 Variant="Variant.Outlined"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.Category">
+                            <MudSelectItem Value="@("Desktop")">Desktop</MudSelectItem>
+                            <MudSelectItem Value="@("Laptop")">Laptop</MudSelectItem>
+                            <MudSelectItem Value="@("Virtual")">Virtual</MudSelectItem>
+                        </MudSelect>
+
+                        @if (selectedMainOU == "Lab" && selectedSubOU == "Desktop")
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="my-3">
+                                <MudText Typo="Typo.body2">
+                                    <strong>Warning:</strong> SusEquip can ONLY add Lab machines, if no network requirement is needed.
+                                    <br />If this machine needs to be on the DNA/ISE network or is going to Risø, please add this PC manually in DTUPC Frontend.
+                                </MudText>
+                            </MudAlert>
+                        }
+
+                        <!-- Divider for User Information -->
+                        <MudDivider />
+                        <MudText Typo="Typo.h6">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+                            User Assignment
+                        </MudText>
+
+                        <!-- App Owner -->
+                        <MudTextField T="string" 
+                                    Label="App Owner(s) comma-separated (without win\)" 
+                                    @bind-Value="appOwnerRaw" 
+                                    Variant="Variant.Outlined"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Person"
+                                    HelperText="Enter usernames separated by commas, e.g., user1,user2" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudContainer Class="pa-4">
+            <MudStack Row Justify="Justify.FlexEnd" Spacing="3">
+                <MudButton OnClick="() => MudDialog.Cancel()" 
+                         Color="Color.Default" 
+                         Variant="Variant.Text"
+                         StartIcon="@Icons.Material.Filled.Close">
+                    Cancel
+                </MudButton>
+                <MudButton OnClick="SubmitAsync" 
+                         Color="Color.Primary" 
+                         Variant="Variant.Filled"
+                         StartIcon="@Icons.Material.Filled.CloudUpload">
+                    Submit to DTUPC
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public EquipmentData EquipmentData { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    private DTUPC_NewDevice DTUPC_NewDevice = new DTUPC_NewDevice();
+
+    // Bound fields for the form
+    private string pcName = string.Empty;
+    private string macAddress1 = string.Empty;
+    private string uuid = string.Empty;
+
+    // For the OU selection:
+    private string selectedMainOU = string.Empty;     // e.g. "General", "Employee", "Industrial PhD", "Lab", "Student"
+    private string selectedSubOU = string.Empty;      // e.g. "Desktop", "Laptop", "Virtual"
+
+    // For app owner(s):
+    private string appOwnerRaw = string.Empty;  // user can type e.g. "user1,user2" -> we will convert to "win\user1,win\user2"
+
+    // If you must pick an OSD resource from the "api/Device/NewComputerOSDs" list:
+    private string selectedOSDresourceID = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsername();
+
+        Http = HttpClientFactory.CreateClient();
+        if (EquipmentData == null)
+        {
+            Snackbar.Add("Error: Missing EquipmentData!", Severity.Error);
+            MudDialog.Cancel();
+            return;
+        }
+
+        pcName = EquipmentData.PC_Name ?? string.Empty;
+        macAddress1 = EquipmentData.Mac_Address1 ?? string.Empty;
+        uuid = EquipmentData.UUID ?? string.Empty;
+    }
+
+    private async Task SubmitAsync()
+    {
+        try
+        {
+            // 1. Check existence
+            if (await DeviceExists(pcName, macAddress1, uuid))
+            {
+                Snackbar.Add("A device with these identifiers already exists!", Severity.Error);
+                return;
+            }
+
+            // 2. Get OSDresourceID
+            selectedOSDresourceID = await GetDefaultOSDresourceID();
+
+            // 3. Build the final OU path from user’s selections:
+            var finalOU = BuildOUPath(selectedMainOU, selectedSubOU);
+            Console.WriteLine($"Generated OU Path: {finalOU}");
+
+            // 4. Build the “PrimaryUsers” string with “win\” prefix for each user
+            var primaryUsers = BuildPrimaryUsers(appOwnerRaw);
+            // e.g. if user typed "abc123,xyz999" => "win\abc123,win\xyz999"
+
+            // 5. Construct the NewDevice payload
+            var newDevice = new DTUPC_NewDevice
+                {
+                    DeviceName = pcName,
+                    MacAddress = macAddress1,
+                    UUIDAddress = uuid,
+                    OSDresourceID = selectedOSDresourceID,
+                    variable = finalOU,
+                    PrimaryUsers = primaryUsers
+                };
+
+            // 6. Call AddNewDevice
+            var success = await AddNewDevice(newDevice);
+            if (success)
+            {
+                string time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                // Log the entry
+                var logEntry = new DTUPC_Log
+                    {
+                        EntryDate = time,
+                        CreatorInitials = EquipmentData.Creator_Initials,
+                        PCName = pcName,
+                        MacAddress1 = macAddress1,
+                        SerialNo = EquipmentData.Serial_No,
+                        UUID = uuid
+                    };
+                DatabaseHelper.LogDTUPCEntry(logEntry);
+
+                Snackbar.Add("Device successfully added to DTUPC!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Failed to add device to DTUPC", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task<bool> AddNewDevice(DTUPC_NewDevice device)
+    {
+        var url = "https://dtupcapi.ait.dtu.dk/api/Device/AddNewDevice";
+        var tokenResult = ApiService.GetToken();
+
+        using var client = HttpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+        client.DefaultRequestHeaders.Add("currentUser", "SUSservice");
+
+        var json = JsonConvert.SerializeObject(device);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync(url, content);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+        return response.IsSuccessStatusCode;
+    }
+
+    private async Task<bool> DeviceExists(string devName, string mac, string theUuid)
+    {
+        var url = $"https://dtupcapi.ait.dtu.dk/api/Device/CheckExistence?mac={mac}&UUID={theUuid}&deviceName={devName}";
+        var tokenResult = ApiService.GetToken();
+
+        using var client = HttpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+
+        var response = await client.GetAsync(url);
+        if (!response.IsSuccessStatusCode)
+            return false;
+
+        var body = await response.Content.ReadAsStringAsync();
+        var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(body);
+
+        if (jsonResponse == null) return false;
+
+        bool macExists = jsonResponse.ContainsKey("MacAddress") && 
+                        jsonResponse["MacAddress"].ContainsKey("Value") &&
+                        jsonResponse["MacAddress"]["Value"]?.ToString()?.ToLower() == "true";
+        
+        bool deviceExists = jsonResponse.ContainsKey("Device") && 
+                           jsonResponse["Device"].ContainsKey("Value") &&
+                           jsonResponse["Device"]["Value"]?.ToString()?.ToLower() == "true";
+        
+        bool uuidExists = jsonResponse.ContainsKey("UUID") && 
+                         jsonResponse["UUID"].ContainsKey("Value") &&
+                         jsonResponse["UUID"]["Value"]?.ToString()?.ToLower() == "true";
+
+        return macExists || deviceExists || uuidExists;
+    }
+
+    private async Task<string> GetDefaultOSDresourceID()
+    {
+        var url = "https://dtupcapi.ait.dtu.dk/api/Device/GetDefaultOS";
+        var tokenResult = ApiService.GetToken();
+
+        using var client = HttpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+
+        var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        var data = await response.Content.ReadAsStringAsync();
+
+        // Parse the JSON array to extract the resourceID
+        var resourceIDs = JsonConvert.DeserializeObject<List<string>>(data);
+        var resourceID = resourceIDs?.FirstOrDefault();
+
+        return resourceID ?? "1234"; // Default value if no resourceID is found
+    }
+
+    private string BuildPrimaryUsers(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return "";
+
+        // user typed "abc123,xyz999" => split => prefix each => "win\abc123,win\xyz999"
+        var split = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var withPrefix = split.Select(x => $"win\\{x}");
+        return string.Join(",", withPrefix);
+    }
+
+    private string BuildOUPath(string mainOU, string subOU)
+    {
+        return $"OU={subOU},OU={mainOU},OU=Managed,OU=Computers,OU=SUS,OU=Institutter,DC=win,DC=dtu,DC=dk";
+    }
+
+    private async Task LoadUsername()
+    {
+        var username = await JSRuntime.InvokeAsync<string>("cookieHelper.getCookie", "Creator_Initials");
+        if (!string.IsNullOrEmpty(username))
+        {
+            EquipmentData.Creator_Initials = username;
+        }
+    }
+
+
+
+}
+

@@ -1,0 +1,21 @@
+﻿@inherits ErrorBoundary
+@inject NavigationManager NavigationManager
+@inject ILogger<CustomErrorBoundary> Logger
+
+@code {
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        // Log the exception with details
+        Logger.LogError(exception, "Unhandled exception in CustomErrorBoundary: {ExceptionMessage}", exception.Message);
+        
+        // Check if it's an ObjectDisposedException - often due to component lifecycle issues
+        if (exception is ObjectDisposedException)
+        {
+            Logger.LogWarning("ObjectDisposedException caught - component may have been disposed during rendering");
+        }
+        
+        // Navigate to error page
+        NavigationManager.NavigateTo("/Error");
+        return base.OnErrorAsync(exception);
+    }
+}

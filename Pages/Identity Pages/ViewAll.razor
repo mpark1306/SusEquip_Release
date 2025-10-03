@@ -1,0 +1,41 @@
+﻿@* @page "/ViewAll"
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.EntityFrameworkCore;
+
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject NavigationManager NavigationManager
+@using System.Security.Principal
+
+<PageTitle>View All</PageTitle>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5" Align="Align.Center">
+            All Admins
+        </MudText>
+    </MudItem>
+
+    <MudTable Class="centered-table"  Items="@admins">
+            <HeaderContent>
+                <MudTh>Username</MudTh>
+                <MudTh>Email</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.UserName.Split('@')[0]</MudTd>
+                <MudTd>@context.Email</MudTd>
+            </RowTemplate>
+        </MudTable>
+  
+    
+</MudGrid>
+
+@code {
+    private List<IdentityUser> admins;
+
+    protected override async Task OnInitializedAsync()
+    {
+        admins = await UserManager.Users.ToListAsync();
+    }
+
+} *@
